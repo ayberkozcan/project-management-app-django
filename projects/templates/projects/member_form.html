@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Create Project{% endblock %}
+{% block title %}Add Member – {{ project.name }}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -9,11 +9,7 @@
             <div class="card-body">
 
                 <h5 class="mb-3">
-                    {% if object %}
-                        Edit Project - <span class="text-muted">{{ object.name }}</span>
-                    {% else %}
-                        Create Project
-                    {% endif %}
+                    Add Member – <span class="text-muted">{{ project.name }}</span>
                 </h5>
 
                 {% if form.errors %}
@@ -27,37 +23,28 @@
                     {% csrf_token %}
 
                     <div class="mb-3">
-                        {{ form.name.label_tag }}
-                        {{ form.name }}
-                        {% if form.name.errors %}
+                        {{ form.user.label_tag }}
+                        {{ form.user }}
+                        {% if form.user.errors %}
                             <div class="text-danger small">
-                                {{ form.name.errors|striptags }}
+                                {{ form.user.errors|striptags }}
                             </div>
                         {% endif %}
                     </div>
 
                     <div class="mb-3">
-                        {{ form.description.label_tag }}
-                        {{ form.description }}
-                        {% if form.description.errors %}
-                            <div class="text-danger small">
-                                {{ form.description.errors|striptags }}
-                            </div>
-                        {% endif %}
+                        {{ form.role.label_tag }}
+                        {{ form.role }}
                     </div>
 
                     <div class="d-flex justify-content-between">
-                        <a href="{% url 'project_list' %}"
+                        <a href="{% url 'project_members' project.id %}"
                            class="btn btn-outline-secondary">
                             ← Back
                         </a>
 
                         <button class="btn btn-primary">
-                            {% if object %}
-                                Save Changes
-                            {% else %}
-                                Create Project
-                            {% endif %}
+                            Add Member
                         </button>
                     </div>
                 </form>
