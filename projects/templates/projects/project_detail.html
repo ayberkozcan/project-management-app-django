@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1">{{ project.name }}</h2>
+            <p class="text-muted mb-0">
+                Owner:
+                {{ project.owner.username }}
+                {% if project.owner == request.user %}
+                    <span class="badge bg-secondary ms-1">You</span>
+                {% endif %}
+            </p>
+        </div>
+
+        {% if project.owner == request.user %}
+        <div>
+            <a href="{% url 'project_edit' project.id %}" class="btn btn-sm btn-outline-primary">
+                Edit
+            </a>
+
+            <form method="post"
+                  action="{% url 'project_delete' project.id %}"
+                  class="d-inline"
+                  onsubmit="return confirm('Are you sure you want to delete this project?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    Delete
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h6 class="text-muted">Description</h6>
+            <p class="mb-0">
+                {{ project.description|default:"No description provided." }}
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+
+        <div class="col-md-8">
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    Tasks
+                </div>
+                <div class="card-body text-muted">
+                    <ul class="list-unstyled mb-0">
+                        {% for task in project.tasks.all %}
+                            <li>{{ task.name }}</li>
+                                <a href="{% url 'project_members' project.id %}"
+                                class="btn btn-sm btn-link px-0 mt-2">
+                                    Manage tasks
+                            </a>
+                        {% empty %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <li class="text-muted">No tasks</li>
+                                <a href="{% url 'project_members' project.id %}"
+                                class="btn btn-success btn-sm">
+                                    + Add task
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    Activity Log
+                </div>
+                <div class="card-body text-muted">
+                    Activity history will be here.
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    Members
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        {% for member in project.members.all %}
+                            <li class="d-flex align-items-center gap-2">
+                                {{ member.user.username }}
+
+                                {% if member.role == "admin" %}
+                                    <i class="bi bi-star-fill text-warning"
+                                    data-bs-toggle="tooltip"
+                                    title="Project Admin"></i>
+                                {% endif %}
+
+                                {% if member.user == project.owner %}
+                                    <span class="badge bg-primary ms-1">Owner</span>
+                                {% endif %}
+                            </li>
+
+                        {% empty %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <li class="text-muted">No members</li>
+                            </div>
+                        {% endfor %}
+                    </ul>
+
+                    <a href="{% url 'project_members' project.id %}"
+                    class="btn btn-success btn-sm mt-4">
+                        Manage members
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    Comments
+                </div>
+                <div class="card-body text-muted">
+                    Comments will be here.
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+{% endblock %}
