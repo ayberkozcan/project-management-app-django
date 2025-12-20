@@ -4,9 +4,18 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, D
 from projects.forms import ProjectForm, ProjectMemberForm
 from .models import Project, ProjectMember
 from django.urls import reverse_lazy, reverse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+
+@login_required
+def dashboard(request):
+    projects_count = Project.objects.filter(owner=request.user).count()
+    return render(request, "projects/dashboard.html", {"projects_count": projects_count})
+
+@login_required
+def profile(request):
+    return render(request, "projects/profile.html")
 
 class ProjectListView(LoginRequiredMixin, ListView):
     model = Project
@@ -104,6 +113,11 @@ class AddMemberView(LoginRequiredMixin, CreateView):
         )
         return super().dispatch(request, *args, **kwargs)
     
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["project"] = self.project
+        return kwargs
+
     def form_valid(self, form):
         form.instance.project = self.project
         try:
