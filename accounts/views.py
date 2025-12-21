@@ -6,7 +6,9 @@ from .forms import AccountSignupForm, AccountLoginForm
 class AccountLoginView(LoginView):
     template_name = "accounts/login.html"
     authentication_form = AccountLoginForm
-    success_url = reverse_lazy("dashboard")
+    
+    def get_success_url(self):
+        return reverse_lazy("dashboard")
 
 class SignUpView(CreateView):
     form_class = AccountSignupForm
