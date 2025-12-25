@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Project Members – {{ project.name }}{% endblock %}
+{% block title %}Group Members – {{ group.name }}{% endblock %}
 
 {% block content %}
 <h3 class="d-flex justify-content-between align-items-center mb-4">
-    <div>Project Members – <span class="text-muted">{{ project.name }}</span></div>
-    {% if request.user == project.owner %}
-        <a href="{% url 'member_add' project.id %}" class="btn btn-info btn-sm">+ Add Member</a>
+    <div>Group Members – <span class="text-muted">{{ group.name }}</span></div>
+    {% if request.user == group.owner %}
+        <a href="" class="btn btn-info btn-sm">+ Add Member</a>
     {% endif %}
 </h3>
 
@@ -17,26 +17,26 @@
                 <th>User</th>
                 <th>Role</th>
                 <th>Joined</th>
-                {% if request.user == project.owner %}  
+                {% if request.user == group.owner %}  
                     <th>Actions</th>
                 {% endif %}
             </tr>
         </thead>
         <tbody>
-            {% for pm in project_members %}
+            {% for gm in group_members %}
             <tr>
-                <td>{{ pm.user.username }}</td>
+                <td>{{ gm.username }}</td>
                 <td>
                     <span class="badge bg-secondary">
-                        {{ pm.get_role_display }}
+                        {{ gm.get_role_display }}
                     </span>
                 </td>
-                <td>{{ pm.joined_at|date:"d M Y" }}</td>
-                {% if request.user == project.owner %}
+                <td>{{ gm.date_joined|date:"d M Y" }}</td>
+                {% if request.user == group.owner %}
                     <td>
                         <form method="post"
-                            action="{% url 'member_remove' project.id pm.user.id %}"
-                            onsubmit="return confirm('Remove this member from the project?');"
+                            action=""
+                            onsubmit="return confirm('Remove this member from the group?');"
                             style="display:inline;">
                             {% csrf_token %}
                             <button type="submit"
@@ -51,7 +51,7 @@
             {% empty %}
             <tr>
                 <td colspan="3" class="text-center text-muted py-3">
-                    No members in this project.
+                    No members in this group.
                 </td>
             </tr>
             {% endfor %}

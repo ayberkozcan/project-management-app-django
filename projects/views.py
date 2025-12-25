@@ -7,6 +7,7 @@ from django.urls import reverse_lazy, reverse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 
 @login_required
 def dashboard(request):
@@ -22,6 +23,10 @@ class ProjectListView(LoginRequiredMixin, ListView):
     template_name = "projects/project_list.html"
     context_object_name = "projects"
     login_url = "/accounts/login/"
+
+    def get_queryset(self):
+        user = self.request.user
+        return Project.objects.filter(Q(owner=user) | Q(assigned_groups__members=user)).distinct()
 
 class ProjectMembersView(LoginRequiredMixin, ListView):
     model = ProjectMember

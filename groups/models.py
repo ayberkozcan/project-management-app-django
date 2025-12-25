@@ -16,6 +16,11 @@ class Group(models.Model):
         on_delete=models.CASCADE,
         related_name="owned_groups"
     )
+    projects = models.ManyToManyField(
+        "projects.Project",
+        related_name="assigned_groups",
+        blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
