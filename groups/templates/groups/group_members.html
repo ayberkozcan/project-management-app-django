@@ -5,8 +5,8 @@
 {% block content %}
 <h3 class="d-flex justify-content-between align-items-center mb-4">
     <div>Group Members – <span class="text-muted">{{ group.name }}</span></div>
-    {% if request.user == group.owner %}
-        <a href="" class="btn btn-info btn-sm">+ Add Member</a>
+    {% if user_can_manage_group %}
+        <a href="{% url 'group_member_add' group.id %}" class="btn btn-info btn-sm">+ Add Member</a>
     {% endif %}
 </h3>
 
@@ -17,7 +17,7 @@
                 <th>User</th>
                 <th>Role</th>
                 <th>Joined</th>
-                {% if request.user == group.owner %}  
+                {% if user_can_manage_group %}  
                     <th>Actions</th>
                 {% endif %}
             </tr>
@@ -25,14 +25,19 @@
         <tbody>
             {% for gm in group_members %}
             <tr>
-                <td>{{ gm.username }}</td>
+                <td>
+                    {{ gm.user.username }}
+                    {% if gm.user == request.user %}
+                        <span class="badge bg-danger ms-1">You</span>
+                    {% endif %}
+                </td>
                 <td>
                     <span class="badge bg-secondary">
                         {{ gm.get_role_display }}
                     </span>
                 </td>
-                <td>{{ gm.date_joined|date:"d M Y" }}</td>
-                {% if request.user == group.owner %}
+                <td>{{ gm.joined_at|date:"d M Y" }}</td>
+                {% if user_can_manage_group and gm.user != group.owner %}
                     <td>
                         <form method="post"
                             action=""

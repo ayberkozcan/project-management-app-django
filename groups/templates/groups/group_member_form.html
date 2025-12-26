@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Add Member – {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+
+                <h5 class="mb-3">
+                    Add Member – <span class="text-muted">{{ group.name }}</span>
+                </h5>
+
+                {% if form.errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    Please fix the error below.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        {{ form.user.label_tag }}
+                        {{ form.user }}
+                        {% if form.user.errors %}
+                            <div class="text-danger small">
+                                {{ form.user.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.role.label_tag }}
+                        {{ form.role }}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'group_members' group.id %}"
+                           class="btn btn-outline-secondary">
+                            ← Back
+                        </a>
+
+                        <button class="btn btn-primary">
+                            Add Member
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

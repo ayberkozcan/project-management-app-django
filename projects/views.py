@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import IntegrityError
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 
 from projects.forms import ProjectForm, ProjectMemberForm
@@ -127,7 +128,7 @@ class AddMemberView(LoginRequiredMixin, CreateView):
         form.instance.project = self.project
         try:
             return super().form_valid(form)
-        except:
+        except IntegrityError:
             form.add_error(
                 "user",
                 "This user is already a member of this project."

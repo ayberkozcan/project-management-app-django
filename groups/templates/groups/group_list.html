@@ -5,7 +5,14 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3 class="mb-4">My Groups</h3>
-    <a href="create" class="btn btn-success btn-sm">+ New Group</a>
+    
+    <div>
+        <a href="{% url 'dashboard' %}"
+            class="btn btn-sm btn-outline-secondary">
+            ← Back
+        </a>
+        <a href="create" class="btn btn-success btn-sm">+ New Group</a>
+    </div>
 </div>
 
 <div class="card shadow-sm">
@@ -23,7 +30,10 @@
                 {% for group in groups %}
                 <tr>
                     <td>
-                        {{ group.name }} 
+                        <a href="{% url 'group_detail' group.id %}"
+                        class="fw-semibold text-dark text-decoration-none">
+                            {{ group.name }} 
+                        </a>
                         {% if group.owner == request.user %}
                             <span class="badge bg-danger ms-1">Owner</span>
                         {% endif %} 
