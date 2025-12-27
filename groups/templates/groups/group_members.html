@@ -5,9 +5,15 @@
 {% block content %}
 <h3 class="d-flex justify-content-between align-items-center mb-4">
     <div>Group Members – <span class="text-muted">{{ group.name }}</span></div>
-    {% if user_can_manage_group %}
-        <a href="{% url 'group_member_add' group.id %}" class="btn btn-info btn-sm">+ Add Member</a>
-    {% endif %}
+    <div>
+        <a href="{% url 'group_detail' group.id %}"
+            class="btn btn-sm btn-outline-secondary">
+            ← Group Details
+        </a>
+        {% if user_can_manage_group %}
+            <a href="{% url 'group_member_add' group.id %}" class="btn btn-info btn-sm">+ Add Member</a>
+        {% endif %}
+    </div>
 </h3>
 
 <div class="card shadow-sm">
@@ -40,7 +46,7 @@
                 {% if user_can_manage_group and gm.user != group.owner %}
                     <td>
                         <form method="post"
-                            action=""
+                            action="{% url 'group_member_remove' group.id gm.user.id %}"
                             onsubmit="return confirm('Remove this member from the group?');"
                             style="display:inline;">
                             {% csrf_token %}

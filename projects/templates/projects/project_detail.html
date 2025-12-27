@@ -19,6 +19,11 @@
 
         {% if project.owner == request.user %}
         <div>
+            <a href="{% url 'project_list' %}"
+            class="btn btn-sm btn-outline-secondary">
+                ← Back
+            </a>
+
             <a href="{% url 'project_edit' project.id %}" class="btn btn-sm btn-outline-primary">
                 Edit
             </a>
@@ -57,14 +62,14 @@
                     <ul class="list-unstyled mb-0">
                         {% for task in project.tasks.all %}
                             <li>{{ task.name }}</li>
-                                <a href="{% url 'project_members' project.id %}"
+                                <a href=""
                                 class="btn btn-sm btn-link px-0 mt-2">
                                     Manage tasks
                             </a>
                         {% empty %}
                             <div class="d-flex justify-content-between align-items-center">
                                 <li class="text-muted">No tasks</li>
-                                <a href="{% url 'project_members' project.id %}"
+                                <a href=""
                                 class="btn btn-success btn-sm">
                                     + Add task
                                 </a>

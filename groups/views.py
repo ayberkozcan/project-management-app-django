@@ -1,9 +1,10 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError
-from django.http import HttpResponseForbidden
-from django.shortcuts import get_object_or_404
+from django.http import Http404, HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 
@@ -38,16 +39,18 @@ class GroupDetailView(LoginRequiredMixin, DetailView):
 class GroupProjectsView(LoginRequiredMixin, ListView):
     template_name = "groups/group_projects.html"
     context_object_name = "group_projects"
-    login_url = "/account/login"
+    login_url = "/accounts/login"
 
     def get_group(self):
         group = get_object_or_404(Group, id=self.kwargs["group_id"])
 
         if (
             group.owner == self.request.user or
-            group.members.filter(user=self.request.user).exists()
+            group.group_members.filter(user=self.request.user).exists()
         ):
             return group
+        
+        raise Http404("You are not allowed to access this group.")
         
     def get_queryset(self):
         return self.get_group().projects.all()
@@ -167,3 +170,22 @@ class AddGroupMemberView(LoginRequiredMixin, CreateView):
     
     def get_success_url(self):
         return reverse_lazy("group_members", kwargs={"group_id": self.group.id})
+    
+@login_required
+def remove_group_member(request, group_id, member_id):
+    if request.method != "POST":
+        raise PermissionDenied
+    
+    group = get_object_or_404(Group, id=group_id)
+
+    if group.owner != request.user:
+        raise PermissionDenied
+    
+    membership = get_object_or_404(
+        GroupMember,
+        group=group,
+        user_id=member_id
+    )
+    membership.delete()
+
+    return redirect("group_members", group_id=group.id)

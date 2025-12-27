@@ -5,9 +5,15 @@
 {% block content %}
 <h3 class="d-flex justify-content-between align-items-center mb-3">
     <div>Group Projects – <span class="text-muted">{{ group.name }}</span></div>
-    {% if request.user == group.owner %}
-        <a href="" class="btn btn-info btn-sm">+ Assign Project</a>
-    {% endif %}
+    <div>
+        <a href="{% url 'group_detail' group.id %}"
+        class="btn btn-sm btn-outline-secondary">
+            ← Group Detail
+        </a>
+        {% if request.user == group.owner %}
+            <a href="" class="btn btn-info btn-sm">+ Assign Project</a>
+        {% endif %}
+    </div>
 </h3>
 
 <div class="card shadow-sm">
@@ -23,15 +29,19 @@
             </tr>
         </thead>
         <tbody>
-            {% for gp in group_projects %}
+            {% for project in group_projects %}
             <tr>
-                <td>{{ gp.user.username }}</td>
+                <td>
+                    <a href="{% url 'project_detail' project.id %}">
+                        {{ project.name }}
+                    </a>
+                </td>
                 <td>
                     <span class="badge bg-secondary">
-                        {{ gp.project.owner }}
+                        {{ project.owner.username }}
                     </span>
                 </td>
-                <td>{{ gp.created_at|date:"d M Y" }}</td>
+                <td>{{ project.created_at|date:"d M Y" }}</td>
                 {% if request.user == group.owner %}
                     <td>
                         <form method="post"
@@ -45,7 +55,7 @@
                                 <i class="bi bi-trash"></i>
                             </button>
                         </form>
-										</td>		
+                    </td>		
                 {% endif %}
             </tr>
             {% empty %}
