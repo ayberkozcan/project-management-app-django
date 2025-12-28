@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Assign Group – {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+
+                <h5 class="mb-3">
+                    Assign Group – <span class="text-muted">{{ project.name }}</span>
+                </h5>
+
+                {% if form.errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    Please fix the error below.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        {{ form.group.label_tag }}
+                        {{ form.group }}
+                        {% if form.group.errors %}
+                            <div class="text-danger small">
+                                {{ form.group.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.role.label_tag }}
+                        {{ form.role }}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'project_groups' project.id %}"
+                           class="btn btn-outline-secondary">
+                            ← Back
+                        </a>
+
+                        <button class="btn btn-primary">
+                            Assign Group
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

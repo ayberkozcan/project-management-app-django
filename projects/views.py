@@ -1,8 +1,10 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, FormView
 
-from projects.forms import ProjectForm, ProjectMemberForm
+from groups.forms import GroupMemberForm
+from groups.models import Group, GroupMember
+from projects.forms import ProjectForm, ProjectGroupForm, ProjectMemberForm
 from .models import Project, ProjectMember
 from django.urls import reverse_lazy, reverse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -50,6 +52,34 @@ class ProjectMembersView(LoginRequiredMixin, ListView):
         project = self.get_project()
         return ProjectMember.objects.filter(project=project)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project"] = self.get_project()
+        return context
+    
+class ProjectGroupsView(LoginRequiredMixin, ListView):
+    model = Project
+    group_model = Group
+    template_name = "projects/project_groups.html"
+    context_object_name = "project_groups"
+    login_url = "/accounts/login/"
+
+    def get_project(self):
+        project = get_object_or_404(Project, id=self.kwargs["project_id"])
+
+        is_owner = project.owner == self.request.user
+        is_admin = project.members.filter(user=self.request.user, role="admin").exists()
+        is_member = project.members.filter(user=self.request.user).exists()
+
+        if is_owner or is_admin or is_member:
+            return project
+        
+        raise PermissionDenied
+    
+    def get_queryset(self):
+        project = self.get_project()
+        return Group.objects.filter(projects=project)
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["project"] = self.get_project()
@@ -143,6 +173,52 @@ class AddMemberView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse_lazy("project_members", kwargs={"project_id": self.project.id})
     
+class AddGroupView(LoginRequiredMixin, FormView):
+    form_class = ProjectGroupForm
+    template_name = "projects/group_form.html"
+    login_url = "/accounts/login/"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.project = get_object_or_404(
+            Project,
+            id=kwargs["project_id"]
+        )
+
+        if not (
+            self.project.owner == request.user or
+            ProjectMember.objects.filter(
+                project=self.project,
+                user=request.user,
+                role="admin"
+            ).exists()
+        ):
+            raise PermissionDenied
+        
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["project"] = self.project
+        return kwargs
+
+    def form_valid(self, form):
+        group = form.cleaned_data["group"]
+
+        if group in self.project.assigned_groups.all():
+            form.add_error("group", "This group is already assigned to this project.")
+            return self.form_invalid(form)
+
+        self.project.assigned_groups.add(group)
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project"] = self.project
+        return context
+    
+    def get_success_url(self):
+        return reverse_lazy("project_groups", kwargs={"project_id": self.project.id})
+
 @login_required
 def remove_project_member(request, project_id, member_id):
     if request.method != "POST":
