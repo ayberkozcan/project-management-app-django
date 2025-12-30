@@ -37,7 +37,9 @@
                         {{ pg.owner }}
                     </span>
                 </td>
-                <td>{{ pg.group_members.count }} members</td>
+                <td>
+                    <a href="{% url 'project_members' project.id %}">{{ pg.group_members.count }} members</a>
+                </td>
                 {% comment %} {% if request.user == project.owner %}
                     <td>
                         <form method="post"
@@ -56,7 +58,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="3" class="text-center text-muted py-3">
+                <td colspan="4" class="text-center text-muted py-3">
                     No groups assigned for this project.
                 </td>
             </tr>

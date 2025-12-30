@@ -26,12 +26,11 @@
                     <h5 class="card-title">Tasks</h5>
                     <p class="card-text display-6">{{ tasks_count|default:"0" }}</p>
                 </div>
-								{% if tasks_count|length == 0 %}
-									<a href="#" class="btn btn-primary btn-sm mt-3 disabled">View Tasks</a>
-								{% else %}
-									<a href="#" class="btn btn-primary btn-sm mt-3">View Tasks</a>
-								{% endif %}
-                
+                {% if tasks_count|length == 0 %}
+                    <a href="#" class="btn btn-primary btn-sm mt-3 disabled">View Tasks</a>
+                {% else %}
+                    <a href="#" class="btn btn-primary btn-sm mt-3">View Tasks</a>
+                {% endif %}
             </div>
         </div>
     </div>

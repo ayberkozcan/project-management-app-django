@@ -16,6 +16,12 @@ class Account(AbstractBaseUser, PermissionsMixin):
 
     date_joined = models.DateTimeField(auto_now_add=True)
 
+    projects = models.ManyToManyField(
+        "projects.Project",
+        through="projects.ProjectMember",
+        related_name="users"
+    )
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 

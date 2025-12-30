@@ -11,10 +11,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
+from django.contrib import messages
 
 @login_required
 def dashboard(request):
-    projects_count = Project.objects.filter(owner=request.user).count()
+    projects_count = Project.objects.filter(users=request.user).count()
     return render(request, "projects/dashboard.html", {"projects_count": projects_count})
 
 @login_required
@@ -29,7 +30,7 @@ class ProjectListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
-        return Project.objects.filter(Q(owner=user) | Q(assigned_groups__members=user)).distinct()
+        return Project.objects.filter(Q(owner=user) | Q(members__user=user)).distinct()
 
 class ProjectMembersView(LoginRequiredMixin, ListView):
     model = ProjectMember
@@ -37,24 +38,30 @@ class ProjectMembersView(LoginRequiredMixin, ListView):
     context_object_name = "project_members"
     login_url = "/accounts/login/"
 
-    def get_project(self):
-        project = get_object_or_404(Project, id=self.kwargs["project_id"])
+    def dispatch(self, request, *args, **kwargs):
+        self.project = get_object_or_404(Project, id=kwargs["project_id"])
 
-        if (
-            project.owner == self.request.user or
-            project.members.filter(user=self.request.user).exists()
-        ):
-            return project
+        is_owner = self.project.owner == request.user
+        is_member = self.project.members.filter(user=request.user).exists()
+
+        if not (is_owner or is_member):
+            raise PermissionDenied
     
-        raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        project = self.get_project()
-        return ProjectMember.objects.filter(project=project)
+        return self.project.members.select_related("user")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["project"] = self.get_project()
+        context["project"] = self.project
+
+        pm = ProjectMember.objects.filter(project=self.project, user=self.request.user).first()
+        context["user_can_manage_project"] = (
+            self.project.owner == self.request.user or
+            (pm and pm.role == "admin")
+        )
+
         return context
     
 class ProjectGroupsView(LoginRequiredMixin, ListView):
@@ -94,8 +101,18 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
+
         try:
-            return super().form_valid(form)
+            response = super().form_valid(form)
+
+            ProjectMember.objects.create(
+                project=self.object,
+                user=self.request.user,
+                role="admin"
+            )
+
+            return response
+
         except:
             form.add_error(
                 "name",
@@ -234,6 +251,12 @@ def remove_project_member(request, project_id, member_id):
         project=project,
         user_id=member_id
     )
+
+    if membership.user == project.owner:
+        messages.error(request, "Project owner cannot be removed.")
+        return redirect("project_members", project_id=project.id)
+
     membership.delete()
+    messages.success(request, "Member removed successfully.")
 
     return redirect("project_members", project_id=project.id)

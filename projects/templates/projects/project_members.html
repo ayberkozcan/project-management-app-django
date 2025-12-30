@@ -36,15 +36,34 @@
         <tbody>
             {% for pm in project_members %}
             <tr>
-                <td>{{ pm.user.username }}</td>
+                <td>
+                    {{ pm.user.username }}
+                    {% if pm.user == request.user %}
+                        <span class="badge bg-danger ms-1">You</span>
+                    {% endif %}
+                </td>
                 <td>
                     <span class="badge bg-secondary">
                         {{ pm.get_role_display }}
                     </span>
                 </td>
-                <td>{{ pm. }}</td>
+                <td>
+                    {% with has_group=False %}
+                        {% for group in pm.user.custom_groups.all %}
+                            {% if project in group.projects.all %}
+                                {% if not has_group %}{% firstof "" %}{% endif %}
+                                {{ group.name }}{% if not forloop.last %}, {% endif %}
+                                {% with has_group=True %}
+                                {% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if not has_group %}
+                            -
+                        {% endif %}
+                    {% endwith %}
+                </td>
                 <td>{{ pm.joined_at|date:"d M Y" }}</td>
-                {% if request.user == project.owner %}
+                {% if user_can_manage_project and pm.user != project.owner %}
                     <td>
                         <form method="post"
                             action="{% url 'member_remove' project.id pm.user.id %}"
