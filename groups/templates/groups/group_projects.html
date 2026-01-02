@@ -10,9 +10,9 @@
         class="btn btn-sm btn-outline-secondary">
             ← Group Detail
         </a>
-        {% if request.user == group.owner %}
+        {% comment %} {% if request.user == group.owner %}
             <a href="" class="btn btn-info btn-sm">+ Assign Project</a>
-        {% endif %}
+        {% endif %} {% endcomment %}
     </div>
 </h3>
 
