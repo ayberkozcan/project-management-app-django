@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}My Group Invites{% endblock %}
+
+{% block content %}
+<h3 class="mb-4">
+    My Group Invites
+</h3>
+
+<div class="card shadow-sm">
+    <table class="table mb-0">
+        <thead class="table-light">
+            <tr>
+                <th>Group</th>
+                <th>Invited By</th>
+                <th>Sent At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invite in invites %}
+            <tr>
+                <td>
+                    {{ invite.group.name }}
+                </td>
+                <td>
+                    {{ invite.invited_by.username }}
+                </td>
+                <td>
+                    {{ invite.created_at|date:"d M Y" }}
+                </td>
+                <td class="d-flex gap-2">
+
+                    <form method="post"
+                          action="{% url 'accept_group_invite' invite.id %}">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-sm btn-success">
+                            Accept
+                        </button>
+                    </form>
+
+                    <form method="post"
+                          action="{% url 'refuse_group_invite' invite.id %}"
+                          onsubmit="return confirm('Refuse this invite?');">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-sm btn-outline-danger">
+                            Refuse
+                        </button>
+                    </form>
+
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4"
+                    class="text-center text-muted py-3">
+                    You have no pending group invites.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

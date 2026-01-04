@@ -23,22 +23,22 @@
                     {% csrf_token %}
 
                     <div class="mb-3">
-                        {{ form.user.label_tag }}
-                        {{ form.user }}
-                        {% if form.user.errors %}
+                        {{ form.identifier.label_tag }}
+                        {{ form.identifier }}
+                        {% if form.identifier.errors %}
                             <div class="text-danger small">
-                                {{ form.user.errors|striptags }}
+                                {{ form.identifier.errors|striptags }}
                             </div>
                         {% endif %}
                     </div>
 
-                    <div class="mb-3">
+                    {% comment %} <div class="mb-3">
                         {{ form.role.label_tag }}
                         {{ form.role }}
-                    </div>
+                    </div> {% endcomment %}
 
                     <div class="d-flex justify-content-between">
-                        <a href="{% url 'group_members' group.id %}"
+                        <a href="{% url 'group_members' group_id=group.id %}"
                            class="btn btn-outline-secondary">
                             ← Back
                         </a>

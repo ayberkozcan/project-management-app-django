@@ -42,3 +42,21 @@ class GroupMember(models.Model):
 
     class Meta:
         unique_together = ("group", "user")
+
+class GroupInvite(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="invites")
+    invited_user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="group_invites"
+    )
+    invited_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="sent_group_invites"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    accepted = models.BooleanField(null=True)
+
+    class Meta:
+        unique_together = ("group", "invited_user")

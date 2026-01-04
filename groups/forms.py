@@ -18,6 +18,15 @@ class GroupForm(forms.ModelForm):
             }),
         }
 
+class GroupInviteForm(forms.Form):
+    identifier = forms.CharField(
+        label="Username or Email",
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "username or email"
+        })
+    )
+
 User = get_user_model()
 
 class GroupMemberForm(forms.ModelForm):

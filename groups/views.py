@@ -3,14 +3,17 @@ from django.db import IntegrityError
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
+from django.views.decorators.http import require_POST
 
-from .models import Group, GroupMember
+from projects.forms import User
 
-from groups.forms import GroupForm, GroupMemberForm
+from .models import Group, GroupInvite, GroupMember
+
+from groups.forms import GroupForm, GroupInviteForm, GroupMemberForm
 
 class GroupListView(LoginRequiredMixin, ListView):
     model = Group
@@ -122,54 +125,159 @@ class GroupDeleteView(LoginRequiredMixin, DeleteView):
     
     def get_success_url(self):
         return reverse("group_list")
-    
-class AddGroupMemberView(LoginRequiredMixin, CreateView):
-    model = GroupMember
-    form_class = GroupMemberForm
+
+class SendGroupInviteView(LoginRequiredMixin, FormView):
+    form_class = GroupInviteForm
     template_name = "groups/group_member_form.html"
-    login_url = "/accounts/login"
 
     def dispatch(self, request, *args, **kwargs):
-        self.group = get_object_or_404(
-            Group,
-            id=kwargs["group_id"]
-        )
+        self.group = get_object_or_404(Group, id=kwargs["group_id"])
 
-        if self.group.owner == request.user:
-            return super().dispatch(request, *args, **kwargs)
-        
-        membership = GroupMember.objects.filter(
-            group=self.group, user=request.user
-        ).first()
+        if not (
+            self.group.owner == request.user or
+            GroupMember.objects.filter(
+                group=self.group,
+                user=request.user,
+                role="admin"
+            ).exists()
+        ):
+            raise PermissionDenied
 
-        if membership and membership.role == "admin":
-            return super().dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
-        return HttpResponseForbidden("You are not allowed to add members to this group.")
-    
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["group"] = self.group
-        return kwargs
-    
-    def form_valid(self, form):
-        form.instance.group = self.group
-        try:
-            return super().form_valid(form)
-        except IntegrityError:
-            form.add_error(
-                "user",
-                "This user is already a member of this group."
-            )
-            return self.form_invalid(form)
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["group"] = self.group
         return context
+
+    def form_valid(self, form):
+        identifier = form.cleaned_data["identifier"]
+
+        user = User.objects.filter(
+            Q(username__iexact=identifier) |
+            Q(email__iexact=identifier)
+        ).first()
+
+        if not user:
+            form.add_error("identifier", "User not found.")
+            return self.form_invalid(form)
+
+        if GroupMember.objects.filter(group=self.group, user=user).exists():
+            form.add_error("identifier", "User is already a member.")
+            return self.form_invalid(form)
+
+        if GroupInvite.objects.filter(
+            group=self.group,
+            invited_user=user,
+            accepted__isnull=True
+        ).exists():
+            form.add_error("identifier", "Invite already sent.")
+            return self.form_invalid(form)
+
+        GroupInvite.objects.create(
+            group=self.group,
+            invited_user=user,
+            invited_by=self.request.user
+        )
+
+        return redirect("group_members", group_id=self.group.id)
+
+class MyGroupInvitesView(LoginRequiredMixin, ListView):
+    model = GroupInvite
+    template_name = "groups/my_invites.html"
+    context_object_name = "invites"
+
+    def get_queryset(self):
+        return GroupInvite.objects.filter(
+            invited_user=self.request.user,
+            accepted__isnull=True
+        )
+
+@require_POST
+@login_required
+def accept_group_invite(request, invite_id):
+    invite = get_object_or_404(
+        GroupInvite,
+        id=invite_id,
+        invited_user=request.user,
+        accepted__isnull=True
+    )
+
+    try:
+        GroupMember.objects.create(
+            group=invite.group,
+            user=request.user,
+            role="employee"
+        )
+    except IntegrityError:
+        pass
+
+    invite.accepted = True
+    invite.save(update_fields=["accepted"])
+
+    return redirect("my_group_invites")
+
+@require_POST
+@login_required
+def refuse_group_invite(request, invite_id):
+    invite = get_object_or_404(
+        GroupInvite,
+        id=invite_id,
+        invited_user=request.user,
+        accepted__isnull=True
+    )
+
+    invite.delete()
+
+    return redirect("my_group_invites")
+
+# class AddGroupMemberView(LoginRequiredMixin, CreateView):
+#     model = GroupMember
+#     form_class = GroupMemberForm
+#     template_name = "groups/group_member_form.html"
+#     login_url = "/accounts/login"
+
+#     def dispatch(self, request, *args, **kwargs):
+#         self.group = get_object_or_404(
+#             Group,
+#             id=kwargs["group_id"]
+#         )
+
+#         if self.group.owner == request.user:
+#             return super().dispatch(request, *args, **kwargs)
+        
+#         membership = GroupMember.objects.filter(
+#             group=self.group, user=request.user
+#         ).first()
+
+#         if membership and membership.role == "admin":
+#             return super().dispatch(request, *args, **kwargs)
+
+#         return HttpResponseForbidden("You are not allowed to add members to this group.")
     
-    def get_success_url(self):
-        return reverse_lazy("group_members", kwargs={"group_id": self.group.id})
+#     def get_form_kwargs(self):
+#         kwargs = super().get_form_kwargs()
+#         kwargs["group"] = self.group
+#         return kwargs
+    
+#     def form_valid(self, form):
+#         form.instance.group = self.group
+#         try:
+#             return super().form_valid(form)
+#         except IntegrityError:
+#             form.add_error(
+#                 "user",
+#                 "This user is already a member of this group."
+#             )
+#             return self.form_invalid(form)
+    
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context["group"] = self.group
+#         return context
+    
+#     def get_success_url(self):
+#         return reverse_lazy("group_members", kwargs={"group_id": self.group.id})
     
 @login_required
 def remove_group_member(request, group_id, member_id):
