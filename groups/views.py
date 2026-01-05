@@ -191,7 +191,7 @@ class MyGroupInvitesView(LoginRequiredMixin, ListView):
         return GroupInvite.objects.filter(
             invited_user=self.request.user,
             accepted__isnull=True
-        )
+        ).select_related("group", "invited_by")
 
 @require_POST
 @login_required
@@ -204,10 +204,10 @@ def accept_group_invite(request, invite_id):
     )
 
     try:
-        GroupMember.objects.create(
+        GroupMember.objects.get_or_create(
             group=invite.group,
             user=request.user,
-            role="employee"
+            defaults={"role": "employee"}
         )
     except IntegrityError:
         pass
@@ -295,5 +295,10 @@ def remove_group_member(request, group_id, member_id):
         user_id=member_id
     )
     membership.delete()
+
+    GroupInvite.objects.filter(
+        group=group,
+        invited_user_id=member_id
+    ).delete()
 
     return redirect("group_members", group_id=group.id)

@@ -3,9 +3,23 @@
 {% block title %}My Group Invites{% endblock %}
 
 {% block content %}
-<h3 class="mb-4">
-    My Group Invites
-</h3>
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h3 class="mb-0">
+            <i class="bi bi-envelope-paper me-2"></i>
+            Group Invitations
+            <span class="badge bg-danger ms-2">
+                {{ notifications_count }}
+            </span>
+        </h3>
+    </div>
+    <div>
+        <a href="{% url 'group_list' %}"
+            class="btn btn-sm btn-outline-secondary">
+            ← Group List
+        </a>
+    </div>
+</div>
 
 <div class="card shadow-sm">
     <table class="table mb-0">
@@ -20,34 +34,23 @@
         <tbody>
             {% for invite in invites %}
             <tr>
-                <td>
-                    {{ invite.group.name }}
-                </td>
-                <td>
-                    {{ invite.invited_by.username }}
-                </td>
-                <td>
-                    {{ invite.created_at|date:"d M Y" }}
-                </td>
+                <td>{{ invite.group.name }}</td>
+                <td>{{ invite.invited_by.username }}</td>
+                <td>{{ invite.created_at|date:"d M Y" }}</td>
                 <td class="d-flex gap-2">
 
                     <form method="post"
-                          action="{% url 'accept_group_invite' invite.id %}">
+                          action="{% url 'accept_group_invite' invite.id %}"
+                          onsubmit="return confirm('Accept this invite?');">
                         {% csrf_token %}
-                        <button type="submit"
-                                class="btn btn-sm btn-success">
-                            Accept
-                        </button>
+                        <button class="btn btn-sm btn-success">Accept</button>
                     </form>
 
                     <form method="post"
                           action="{% url 'refuse_group_invite' invite.id %}"
-                          onsubmit="return confirm('Refuse this invite?');">
+                          onsubmit="return confirm('Decline this invite?');">
                         {% csrf_token %}
-                        <button type="submit"
-                                class="btn btn-sm btn-outline-danger">
-                            Refuse
-                        </button>
+                        <button class="btn btn-sm btn-outline-danger">Decline</button>
                     </form>
 
                 </td>
