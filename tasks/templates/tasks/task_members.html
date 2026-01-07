@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Task Members – {{ group.name }}{% endblock %}
+
+{% block content %}
+<h3 class="d-flex justify-content-between align-items-center mb-4">
+    <div>Task Members – <span class="text-muted">{{ task.name }}</span></div>
+    <div>
+        <a href="{% url 'task_detail' task.id %}"
+            class="btn btn-sm btn-outline-secondary">
+            ← Task Details
+        </a>
+        {% if user_can_manage_task %}
+            <a href="{% url 'task_member_add' task.id %}" class="btn btn-info btn-sm">+ Assign Member</a>
+        {% endif %}
+    </div>
+</h3>
+
+<div class="card shadow-sm">
+    <table class="table mb-0">
+        <thead class="table-light">
+            <tr>
+                <th>User</th>
+                <th>Joined</th>
+                {% if user_can_manage_task %}  
+                    <th>Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for tm in task_members %}
+            <tr>
+                <td>
+                    {{ tm.user.username }}
+                    {% if tm.user == request.user %}
+                        <span class="badge bg-danger ms-1">You</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge bg-secondary">
+                        {{ tm.get_role_display }}
+                    </span>
+                </td>
+                <td>{{ tm.joined_at|date:"d M Y" }}</td>
+                {% if user_can_manage_task and tm.user != task.owner %}
+                    <td>
+                        <form method="post"
+                            action="{% url 'task_member_remove' task.id tm.user.id %}"
+                            onsubmit="return confirm('Unassign this member from the task?');"
+                            style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="btn btn-link p-0 ms-2 text-danger"
+                                title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center text-muted py-3">
+                    No members assigned for this task_detail.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
