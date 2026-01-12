@@ -4,7 +4,8 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, D
 
 from groups.forms import GroupMemberForm
 from groups.models import Group, GroupMember
-from projects.forms import ProjectForm, ProjectGroupForm, ProjectMemberForm
+from projects.forms import ProjectForm, ProjectGroupForm, ProjectMemberForm, ProjectTaskForm
+from tasks.models import Task
 from .models import Project, ProjectMember
 from django.urls import reverse_lazy, reverse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -260,3 +261,115 @@ def remove_project_member(request, project_id, member_id):
     messages.success(request, "Member removed successfully.")
 
     return redirect("project_members", project_id=project.id)
+
+class ProjectTasksView(LoginRequiredMixin, ListView):
+    model = Task
+    template_name = "projects/project_tasks.html"
+    context_object_name = "project_tasks"
+    login_url = "/accounts/login/"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.project = get_object_or_404(Project, id=kwargs["project_id"])
+
+        is_owner = self.project.owner == request.user
+        is_admin = self.project.members.filter(
+            user=request.user,
+            role="admin"
+        ).exists()
+        is_member = self.project.members.filter(user=request.user).exists()
+
+        if not (is_owner or is_admin or is_member):
+            raise PermissionDenied
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return Task.objects.filter(project=self.project)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project"] = self.project
+        context["can_manage_tasks"] = (
+            self.project.owner == self.request.user or
+            self.project.members.filter(
+                user=self.request.user,
+                role="admin"
+            ).exists()
+        )
+        return context
+    
+class AddTaskView(LoginRequiredMixin, CreateView):
+    model = Task
+    form_class = ProjectTaskForm
+    template_name = "tasks/task_form.html"
+    login_url = "/accounts/login/"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.project = get_object_or_404(Project, id=kwargs["project_id"])
+
+        is_owner = self.project.owner == request.user
+        is_admin = ProjectMember.objects.filter(
+            project=self.project,
+            user=request.user,
+            role="admin"
+        ).exists()
+
+        if not (is_owner or is_admin):
+            raise PermissionDenied
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["project"] = self.project
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.project = self.project
+        form.instance.owner = self.request.user
+
+        response = super().form_valid(form)
+
+        if self.object.assigned_group:
+            self.object.assignees.add(
+                *self.object.assigned_group.members.all()
+            )
+
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project"] = self.project
+        return context
+
+    def get_success_url(self):
+        return reverse("project_tasks", kwargs={"project_id": self.project.id})
+    
+class TaskUpdateView(LoginRequiredMixin, UpdateView):
+    model = Project
+    form_class = ProjectTaskForm
+    template_name = "projects/task_form.html"
+    login_url = "/accounts/login/"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        if not (
+            self.object.project.owner == request.user or
+            ProjectMember.objects.filter(
+                project=self.object.project,
+                user=request.user,
+                role="admin"
+            ).exists()
+        ):
+            raise PermissionDenied    
+        
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project"] = self.object.project
+        return context
+    
+    def get_success_url(self):
+        return reverse_lazy("project_tasks", kwargs={"project_id": self.object.project.id})

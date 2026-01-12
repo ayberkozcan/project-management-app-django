@@ -1,6 +1,7 @@
 from django import forms
 
 from groups.models import Group
+from tasks.models import Task
 from .models import Project, ProjectMember
 from django.contrib.auth import get_user_model
 from django.db.models import Count
@@ -55,3 +56,41 @@ class ProjectGroupForm(forms.Form):
         self.fields["group"].queryset = Group.objects.filter(
             owner=project.owner
         ).exclude(id__in=assigned_groups)
+
+class ProjectTaskForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = ["name", "description", "deadline", "assigned_group", "assignees"]
+        widgets = {
+            "name": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Task name"
+            }),
+            "description": forms.Textarea(attrs={
+                "class": "form-control",
+                "placeholder": "Task description",
+                "rows": 4
+            }),
+            "deadline": forms.DateTimeInput(attrs={
+                "class": "form-control",
+                "type": "datetime-local"
+            }),
+            "assigned_group": forms.Select(attrs={
+                "class": "form-control",
+            }),
+            "assignees": forms.SelectMultiple(attrs={
+                "class": "form-control",
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.project = kwargs.pop("project")
+        super().__init__(*args, **kwargs)
+
+        self.fields["assigned_group"].queryset = self.project.assigned_groups.all()
+        self.fields["assigned_group"].required = False
+
+        self.fields["assignees"].queryset = User.objects.filter(
+            projectmember__project=self.project
+        )
+        self.fields["assignees"].required = False
