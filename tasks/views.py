@@ -24,6 +24,10 @@ def is_project_admin(user, project):
         owner=user
     ).exists()
 
+def check_project_admin(user, project):
+    if not is_project_admin(user, project):
+        raise PermissionDenied("You do not have permission to perform this action.")
+
 class TaskCreateView(LoginRequiredMixin, CreateView):
     model = Task
     form_class = TaskForm
@@ -76,66 +80,65 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
         return reverse("project_detail", args=[self.object.project.id])
 
 @login_required
+@require_POST
 def assign_group_to_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
     project = task.project
 
-    if not is_project_admin(request.user, project):
-        raise PermissionDenied
+    check_project_admin(request.user, project)
 
-    if request.method == "POST":
-        form = AssignGroupForm(request.POST, project=project)
-        if form.is_valid():
-            group = form.cleaned_data["group"]
+    form = AssignGroupForm(request.POST, project=project)
+    if not form.is_valid():
+        return render(
+            request,
+            "tasks/assign_members.html",
+            {
+                "form": form,
+                "task": task,
+                "project": project,
+                "assign_type": "group",
+            }
+        )
 
-            task.assignees.clear()
-            task.assigned_group = group
-            task.save()
+    group = form.cleaned_data["group"]
 
-            task.assignees.add(*group.members.all())
-            return redirect("task_detail", task.id)
-    else:
-        form = AssignGroupForm(project=project)
+    task.assignees.clear()
+    task.assigned_group = group
+    task.save(update_fields=["assigned_group"])
 
-    return render(
-        request,
-        "tasks/assign_members.html",
-        {
-            "form": form,
-            "task": task,
-            "project": project,
-            "assign_type": "group",
-        }
-    )
+    task.assignees.add(*group.members.all())
+
+    messages.success(request, "The task has been successfully assigned to the group.")
+    return redirect("task_detail", task.id)
 
 @login_required
+@require_POST
 def assign_individual_to_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
     project = task.project
 
-    if not is_project_admin(request.user, project):
-        raise PermissionDenied
+    check_project_admin(request.user, project)
 
-    if request.method == "POST":
-        form = AssignIndividualForm(request.POST, project=project)
-        if form.is_valid():
-            user = form.cleaned_data["user"]
+    form = AssignIndividualForm(request.POST, project=project)
+    if not form.is_valid():
+        return render(
+            request,
+            "tasks/assign_members.html",
+            {
+                "form": form,
+                "task": task,
+                "project": project,
+                "assign_type": "individual",
+            }
+        )
 
-            task.assigned_group = None
-            task.save(update_fields=["assigned_group"])
+    user = form.cleaned_data["user"]
 
-            task.assignees.add(user)
-            return redirect("task_detail", task.id)
-    else:
-        form = AssignIndividualForm(project=project)
+    task.assignees.clear()
+    task.assigned_group = None
+    task.save(update_fields=["assigned_group"])
 
-    return render(
-        request,
-        "tasks/assign_members.html",
-        {
-            "form": form,
-            "task": task,
-            "project": project,
-            "assign_type": "individual",
-        }
-    )
+    task.assignees.add(user)
+
+    messages.success(request, "The task has been successfully assigned to the user.")
+    return redirect("task_detail", task.id)

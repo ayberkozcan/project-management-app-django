@@ -84,10 +84,15 @@ class ProjectTaskForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        self.project = kwargs.pop("project")
+        self.project = kwargs.pop("project", None)
         super().__init__(*args, **kwargs)
 
-        self.fields["assigned_group"].queryset = self.project.assigned_groups.all()
+        if not self.project:
+            return
+
+        self.fields["assigned_group"].queryset = (
+            self.project.assigned_groups.all()
+        )
         self.fields["assigned_group"].required = False
 
         self.fields["assignees"].queryset = User.objects.filter(
