@@ -39,11 +39,11 @@ Great for learning full Django development: authentication, models & relations, 
    python -m venv venv
    source venv/bin/activate   # On Windows: venv\Scripts\activate
    
-3. Install dependenciesBash
+3. Install dependencies
    ```bash
    pip install -r requirements.txt
    
-4. Apply migrations & create superuserBash
+4. Apply migrations & create superuser
    ```bash
    python manage.py makemigrations
    python manage.py migrate
