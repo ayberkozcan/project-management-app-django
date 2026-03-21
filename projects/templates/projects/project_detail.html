@@ -69,15 +69,30 @@
                     </a>
                 </div>
                 <div class="card-body">
-                    {% if project.tasks.exists %}
-                        <ul class="list-group list-group-flush">
-                            {% for task in project.tasks.all|slice:":5" %}
-                                <li class="list-group-item">{{ task.name }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-muted mb-0">No tasks yet</p>
-                    {% endif %}
+                    {% with total_tasks=project.tasks.count %}
+                        {% if total_tasks > 0 %}
+                            <ul class="list-group list-group-flush">
+                                {% for task in project.tasks.all|slice:":5" %}
+                                    <li class="list-group-item p-0">
+                                        <a href="{% url 'tasks:task_detail' task.id %}" 
+                                        class="d-block px-3 py-2 text-decoration-none text-dark">
+                                            {{ task.name }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+
+                            {% if total_tasks > 5 %}
+                                <div class="mt-2 text-end">
+                                    <a href="{% url 'project_tasks' project.id %}" class="text-decoration-none">
+                                        +{{ total_tasks|add:"-5" }} more
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted mb-0">No tasks yet</p>
+                        {% endif %}
+                    {% endwith %}
                 </div>
             </div>
 
@@ -92,15 +107,25 @@
                     </a>
                 </div>
                 <div class="card-body">
-                    {% if project.comments.exists %}
-                        <ul class="list-group list-group-flush">
-                            {% for comment in project.comments.all|slice:":5" %}
-                                <li class="list-group-item small">{{ comment.body }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-muted mb-0">No comments yet</p>
-                    {% endif %}
+                    {% with total_comments=project.comments.count %}
+                        {% if project.comments.exists %}
+                            <ul class="list-group list-group-flush">
+                                {% for comment in project.comments.all|slice:":2" %}
+                                    <li class="list-group-item small">{{ comment.body }}</li>
+                                {% endfor %}
+                            </ul>
+
+                            {% if total_comments > 2 %}
+                                <div class="mt-2 text-end">
+                                    <a href="{% url 'project_comments' project.id %}" class="text-decoration-none">
+                                        +{{ total_comments|add:"-2" }} more
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted mb-0">No comments yet</p>
+                        {% endif %}
+                    {% endwith %}
                 </div>
             </div>
 
@@ -142,26 +167,36 @@
                     </a>
                 </div>
                 <div class="card-body">
-                    {% if project.members.exists %}
-                        <ul class="list-unstyled mb-2">
-                            {% for member in project.members.all|slice:":5" %}
-                                <li class="d-flex align-items-center gap-2 py-1 small">
-                                    {{ member.user.username }}
-                                    {% if member.user == project.owner %}
-                                        <span class="badge bg-primary">Owner</span>
-                                    {% endif %}
-                                    {% if member.role == "admin" %}
-                                        <span class="badge bg-warning text-dark">Admin</span>
-                                    {% endif %}
-                                    {% if member.user == request.user %}
-                                        <span class="badge bg-danger">You</span>
-                                    {% endif %}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-muted mb-2">No members yet</p>
-                    {% endif %}
+                    {% with total_members=project.members.count %}
+                        {% if project.members.exists %}
+                            <ul class="list-unstyled mb-2">
+                                {% for member in project.members.all|slice:":5" %}
+                                    <li class="d-flex align-items-center gap-2 py-1 small">
+                                        {{ member.user.username }}
+                                        {% if member.user == project.owner %}
+                                            <span class="badge bg-primary">Owner</span>
+                                        {% endif %}
+                                        {% if member.role == "admin" %}
+                                            <span class="badge bg-warning text-dark">Admin</span>
+                                        {% endif %}
+                                        {% if member.user == request.user %}
+                                            <span class="badge bg-danger">You</span>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+
+                            {% if total_members > 5 %}
+                                <div class="mt-2 text-end">
+                                    <a href="{% url 'project_members' project.id %}" class="text-decoration-none">
+                                        +{{ total_members|add:"-5" }} more
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted mb-2">No members yet</p>
+                        {% endif %}
+                    {% endwith %}
                 </div>
             </div>
 

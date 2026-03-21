@@ -6,7 +6,7 @@ from groups.forms import GroupMemberForm
 from groups.models import Group, GroupMember, User
 from projects.forms import ProjectForm, ProjectGroupForm, ProjectMemberForm
 from tasks.forms import AssignGroupForm, AssignIndividualForm, TaskForm
-from .models import Project, ProjectMember, Task
+from .models import Project, Task
 from django.urls import reverse_lazy, reverse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
@@ -27,6 +27,16 @@ def is_project_admin(user, project):
 def check_project_admin(user, project):
     if not is_project_admin(user, project):
         raise PermissionDenied("You do not have permission to perform this action.")
+
+class TaskListView(LoginRequiredMixin, ListView):
+    model = Task
+    template_name = "tasks/task_list.html"
+    context_object_name = "tasks"
+    login_url = "/accounts/login/"
+
+    def get_queryset(self):
+        user = self.request.user
+        return Task.objects.filter(Q(owner=user) | Q(assignees=user)).distinct()
 
 class TaskCreateView(LoginRequiredMixin, CreateView):
     model = Task
@@ -56,28 +66,47 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse("project_detail", args=[self.project.id])
     
-class TaskUpdateView(LoginRequiredMixin, UpdateView):
+class TaskEditView(LoginRequiredMixin, UpdateView):
     model = Task
     form_class = TaskForm
     template_name = "tasks/task_form.html"
-
     login_url = "/accounts/login/"
+
+    pk_url_kwarg = "task_id"
 
     def dispatch(self, request, *args, **kwargs):
         self.object = self.get_object()
-
-        if not is_project_admin(request.user, self.object.project):
+        if self.object.owner != request.user:
             raise PermissionDenied("You are not allowed to edit this task.")
-    
         return super().dispatch(request, *args, **kwargs)
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["project"] = self.object.project
+        context["task"] = self.object
         return context
-    
+
     def get_success_url(self):
-        return reverse("project_detail", args=[self.object.project.id])
+        return reverse("tasks:task_detail", args=[self.object.id])
+
+class TaskDeleteView(LoginRequiredMixin, DeleteView):
+    model = Task
+    
+    def get_queryset(self):
+        return Project.objects.filter(owner=self.request.user)
+
+    def get_success_url(self):
+        return reverse("task_list")
+
+class TaskDetailView(LoginRequiredMixin, DetailView):
+    model = Task
+    template_name = "tasks/task_detail.html"
+    context_object_name = "task"
+
+    def get_queryset(self):
+        return (
+            Task.objects.filter(owner=self.request.user) |
+            Task.objects.filter(assignees=self.request.user)
+        ).distinct()
 
 @login_required
 @require_POST
@@ -114,6 +143,8 @@ def assign_group_to_task(request, task_id):
 @login_required
 @require_POST
 def assign_individual_to_task(request, task_id):
+    MAX_ASSIGNEES = 5
+
     task = get_object_or_404(Task, id=task_id)
     project = task.project
 
@@ -134,6 +165,10 @@ def assign_individual_to_task(request, task_id):
 
     user = form.cleaned_data["user"]
 
+    if task.assignees.count() >= MAX_ASSIGNEES:
+        messages.error(request, f"This task already has the maximum of {MAX_ASSIGNEES} assignees.")
+        return redirect("tasks:task_detail", task.id)
+
     task.assignees.clear()
     task.assigned_group = None
     task.save(update_fields=["assigned_group"])
@@ -141,4 +176,4 @@ def assign_individual_to_task(request, task_id):
     task.assignees.add(user)
 
     messages.success(request, "The task has been successfully assigned to the user.")
-    return redirect("task_detail", task.id)
+    return redirect("tasks:task_detail", task.id)

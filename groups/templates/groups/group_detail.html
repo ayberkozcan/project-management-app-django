@@ -67,15 +67,25 @@
                     </a>
                 </div>
                 <div class="card-body">
-                    {% if group.projects.exists %}
-                        <ul class="list-group list-group-flush">
-                            {% for project in group.projects.all|slice:":5" %}
-                                <li class="list-group-item">{{ project.name }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-muted mb-0">No projects assigned.</p>
-                    {% endif %}
+                    {% with total_projects=group.projects.count %}
+                        {% if group.projects.exists %}
+                            <ul class="list-group list-group-flush">
+                                {% for project in group.projects.all|slice:":5" %}
+                                    <li class="list-group-item">{{ project.name }}</li>
+                                {% endfor %}
+                            </ul>
+
+                            {% if total_projects > 5 %}
+                                <div class="mt-2 text-end">
+                                    <a href="{% url 'group_projects' group.id %}" class="text-decoration-none">
+                                        +{{ total_projects|add:"-5" }} more
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted mb-0">No projects assigned.</p>
+                        {% endif %}
+                    {% endwith %}
                 </div>
             </div>
         </div>
@@ -93,26 +103,36 @@
                     </a>
                 </div>
                 <div class="card-body">
-                    {% if group.group_members.exists %}
-                        <ul class="list-unstyled mb-2">
-                            {% for member in group.group_members.all|slice:":5" %}
-                                <li class="d-flex align-items-center gap-2 py-1 small">
-                                    {{ member.user.username }}
-                                    {% if member.user == group.owner %}
-                                        <span class="badge bg-primary">Owner</span>
-                                    {% endif %}
-                                    {% if member.role == "admin" %}
-                                        <span class="badge bg-warning text-dark">Admin</span>
-                                    {% endif %}
-                                    {% if member.user == request.user %}
-                                        <span class="badge bg-danger">You</span>
-                                    {% endif %}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-muted mb-2">No members yet</p>
-                    {% endif %}
+                    {% with total_members=group.group_members.count %}
+                        {% if group.group_members.exists %}
+                            <ul class="list-unstyled mb-2">
+                                {% for member in group.group_members.all|slice:":5" %}
+                                    <li class="d-flex align-items-center gap-2 py-1 small">
+                                        {{ member.user.username }}
+                                        {% if member.user == group.owner %}
+                                            <span class="badge bg-primary">Owner</span>
+                                        {% endif %}
+                                        {% if member.role == "admin" %}
+                                            <span class="badge bg-warning text-dark">Admin</span>
+                                        {% endif %}
+                                        {% if member.user == request.user %}
+                                            <span class="badge bg-danger">You</span>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+
+                            {% if total_members > 5 %}
+                                <div class="mt-2 text-end">
+                                    <a href="{% url 'group_members' group.id %}" class="text-decoration-none">
+                                        +{{ total_members|add:"-5" }} more
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted mb-2">No members yet</p>
+                        {% endif %}
+                    {% endwith %}
                 </div>
             </div>
             

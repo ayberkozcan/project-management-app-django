@@ -57,6 +57,9 @@ class ProjectGroupForm(forms.Form):
             owner=project.owner
         ).exclude(id__in=assigned_groups)
 
+
+MAX_ASSIGNEES = 5
+
 class ProjectTaskForm(forms.ModelForm):
     class Meta:
         model = Task
@@ -90,12 +93,16 @@ class ProjectTaskForm(forms.ModelForm):
         if not self.project:
             return
 
-        self.fields["assigned_group"].queryset = (
-            self.project.assigned_groups.all()
-        )
+        self.fields["assigned_group"].queryset = self.project.assigned_groups.all()
         self.fields["assigned_group"].required = False
 
         self.fields["assignees"].queryset = User.objects.filter(
             projectmember__project=self.project
         )
         self.fields["assignees"].required = False
+
+    def clean_assignees(self):
+        assignees = self.cleaned_data.get("assignees")
+        if assignees and assignees.count() > MAX_ASSIGNEES:
+            raise forms.ValidationError(f"You can assign at most {MAX_ASSIGNEES} users to this task.")
+        return assignees
