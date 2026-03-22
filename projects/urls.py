@@ -15,6 +15,7 @@ urlpatterns = [
     path("<int:project_id>/groups/", ProjectGroupsView.as_view(), name="project_groups"),
     path("<int:project_id>/groups/add/", AddGroupView.as_view(), name="group_add"),
 
+    path("tasks/", TaskListView.as_view(), name="assigned_tasks_list"),
     path("<int:project_id>/tasks/", ProjectTasksView.as_view(), name="project_tasks"),
     path("<int:project_id>/tasks/add/", AddTaskView.as_view(), name="task_add"),
     path("tasks/<int:pk>/edit/", TaskUpdateView.as_view(), name="task_edit"),

@@ -16,7 +16,13 @@ from django.contrib import messages
 @login_required
 def dashboard(request):
     projects_count = Project.objects.filter(users=request.user).count()
-    return render(request, "projects/dashboard.html", {"projects_count": projects_count})
+    tasks_count = Task.objects.filter(assignees=request.user).count()
+    return render(request, "projects/dashboard.html", 
+        {
+            "projects_count": projects_count,
+            "assigned_tasks_count": tasks_count
+        }
+    )
 
 @login_required
 def profile(request):
@@ -43,6 +49,16 @@ class ProjectListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         user = self.request.user
         return Project.objects.filter(Q(owner=user) | Q(members__user=user)).distinct()
+
+class TaskListView(LoginRequiredMixin, ListView):
+    model = Task
+    template_name = "tasks/assigned_tasks_list.html"
+    context_object_name = "tasks"
+    login_url = "/accounts/login/"
+
+    def get_queryset(self):
+        user = self.request.user
+        return Task.objects.filter(Q(owner=user) | Q(assignees=user)).distinct()
 
 class ProjectMembersView(LoginRequiredMixin, ListView):
     model = ProjectMember

@@ -21,6 +21,10 @@
             <a href="{% url 'project_detail' task.project.id %}" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> Project
             </a>
+            
+            <a href="{% url 'assigned_tasks_list' %}" class="btn btn-outline-secondary btn-sm">
+                Assigned Tasks
+            </a>
 
             {% if task.owner == request.user %}
                 <a href="{% url 'tasks:task_edit' task.id %}" class="btn btn-sm btn-outline-primary">

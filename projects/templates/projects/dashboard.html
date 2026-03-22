@@ -24,12 +24,12 @@
             <div class="card-body d-flex flex-column justify-content-between">
                 <div>
                     <h5 class="card-title">Tasks</h5>
-                    <p class="card-text display-6">{{ tasks_count|default:"0" }}</p>
+                    <p class="card-text display-6">{{ assigned_tasks_count|default:"0" }}</p>
                 </div>
-                {% if tasks_count|length == 0 %}
+                {% if assigned_tasks_count <= 0 %}
                     <a href="#" class="btn btn-primary btn-sm mt-3 disabled">View Tasks</a>
                 {% else %}
-                    <a href="#" class="btn btn-primary btn-sm mt-3">View Tasks</a>
+                    <a href="{% url 'assigned_tasks_list' %}" class="btn btn-primary btn-sm mt-3">View Tasks</a>
                 {% endif %}
             </div>
         </div>
