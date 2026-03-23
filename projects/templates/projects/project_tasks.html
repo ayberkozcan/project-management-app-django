@@ -3,148 +3,85 @@
 {% block title %}Project Tasks – {{ project.name }}{% endblock %}
 
 {% block content %}
-<h3 class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        Project Tasks –
-        <span class="text-muted">{{ project.name }}</span>
+        <h3 class="mb-0">Project Tasks</h3>
+        <span class="text-muted small">{{ project.name }}</span>
     </div>
-    <div>
-        <a href="{% url 'project_detail' project.id %}"
-           class="btn btn-sm btn-outline-secondary">
-            ← Project Details
+    <div class="d-flex gap-2">
+        <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Details
         </a>
-
         {% if can_manage_tasks %}
-            <a href="{% url 'task_add' project.id %}"
-               class="btn btn-sm btn-info ms-2">
-                + Add Task
+            <a href="{% url 'task_add' project.id %}" class="btn btn-sm btn-info">
+                <i class="bi bi-plus"></i> Add Task
             </a>
         {% endif %}
     </div>
-</h3>
+</div>
 
-<div class="card shadow-sm">
-    <div style="max-height: 400px; overflow-y: auto;">
-        <table class="table mb-0 align-middle">
+<div class="card shadow-sm border-0">
+    <div class="table-responsive" style="max-height: 500px;">
+        <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>Task</th>
+                    <th class="ps-4">Task Name</th>
                     <th>Owner</th>
                     <th>Assignees</th>
-                    {% if can_manage_tasks %}
-                        <th class="text-end">Actions</th>
-                    {% endif %}
+                    {% if can_manage_tasks %}<th class="text-end">Actions</th>{% endif %}
                 </tr>
             </thead>
-
             <tbody>
                 {% for task in project_tasks %}
-                    <tr>
-                        <td>
-                            <strong>{{ task.name }}</strong>
-                            {% if task.deadline %}
-                                <div class="small text-muted">
-                                    Due: {{ task.deadline|date:"d M Y H:i" }}
-                                </div>
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            <span class="badge bg-secondary">
-                                {{ task.owner }}
-                            </span>
-                        </td>
-
-                        <td>
-                            {% if task.assigned_group %}
-                                <span class="badge bg-primary me-1">
-                                    👥 {{ task.assigned_group.name }}
-                                </span>
-                            {% endif %}
-
-                            {% for user in task.assignees.all|slice:":3" %}
-                                <span class="badge bg-light text-dark border me-1">
-                                    👤 {{ user.get_full_name|default:user.username }}
-                                </span>
-                            {% endfor %}
-
-                            {% if task.assignees.count > 3 %}
-                                <a href="#"
-                                class="small text-decoration-none"
-                                data-bs-toggle="modal"
-                                data-bs-target="#assigneesModal{{ task.id }}">
-                                    +{{ task.assignees.count|add:"-3" }} more
-                                </a>
-                            {% endif %}
-
-                            {% if not task.assigned_group and not task.assignees.exists %}
-                                <span class="text-muted small">
-                                    Unassigned
-                                </span>
-                            {% endif %}
-                        </td>
-
-                        {% if can_manage_tasks %}
-                            <td class="text-end">
-                                <a href="{% url 'task_edit' task.id %}"
-                                class="btn btn-sm btn-outline-primary">
-                                    Edit
-                                </a>
-                            </td>
+                <tr>
+                    <td class="ps-4">
+                        <strong><a href="{% url 'tasks:task_detail' task.id %}" class="text-dark text-decoration-none">{{ task.name }}</a></strong>
+                        {% if task.deadline %}
+                            <div class="small text-danger">Due: {{ task.deadline|date:"d M Y" }}</div>
                         {% endif %}
-                    </tr>
+                    </td>
+                    <td><span class="badge bg-secondary opacity-75">{{ task.owner }}</span></td>
+                    <td>
+                        {% if task.assigned_group %}
+                            <span class="badge bg-primary">👥 {{ task.assigned_group.name }}</span>
+                        {% endif %}
+                        {% for user in task.assignees.all|slice:":2" %}
+                            <span class="badge bg-light text-dark border">👤 {{ user.username }}</span>
+                        {% endfor %}
+                        {% if task.assignees.count > 2 %}
+                            <a href="#" class="small text-muted ms-1" data-bs-toggle="modal" data-bs-target="#assigneesModal{{ task.id }}">
+                                +{{ task.assignees.count|add:"-2" }} more
+                            </a>
+                        {% endif %}
+                    </td>
+                    {% if can_manage_tasks %}
+                    <td class="text-end">
+                        <a href="{% url 'task_edit' task.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    </td>
+                    {% endif %}
+                </tr>
 
-                    <div class="modal fade"
-                        id="assigneesModal{{ task.id }}"
-                        tabindex="-1"
-                        aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-sm">
-                            <div class="modal-content">
-                                <div class="modal-header py-2">
-                                    <h6 class="modal-title">
-                                        Assignees – {{ task.name }}
-                                    </h6>
-                                    <button type="button"
-                                            class="btn-close"
-                                            data-bs-dismiss="modal"></button>
-                                </div>
-
-                                <div class="modal-body">
-                                    {% if task.assigned_group %}
-                                        <div class="mb-3">
-                                            <strong>Group</strong><br>
-                                            <span class="badge bg-primary">
-                                                👥 {{ task.assigned_group.name }}
-                                            </span>
-                                        </div>
-                                    {% endif %}
-
-                                    {% if task.assignees.exists %}
-                                        <strong>Users</strong>
-                                        <ul class="list-unstyled mt-2 mb-0">
-                                            {% for user in task.assignees.all %}
-                                                <li class="mb-1">
-                                                    👤 {{ user.get_full_name|default:user.username }}
-                                                </li>
-                                            {% endfor %}
-                                        </ul>
-                                    {% else %}
-                                        <span class="text-muted small">
-                                            No users assigned.
-                                        </span>
-                                    {% endif %}
-                                </div>
+                <div class="modal fade" id="assigneesModal{{ task.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered modal-sm">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header py-2 border-0">
+                                <h6 class="modal-title">Assignees</h6>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <ul class="list-group list-group-flush small">
+                                    {% for user in task.assignees.all %}
+                                        <li class="list-group-item px-0">👤 {{ user.username }}</li>
+                                    {% endfor %}
+                                </ul>
                             </div>
                         </div>
                     </div>
-
+                </div>
                 {% empty %}
-                    <tr>
-                        <td colspan="{% if can_manage_tasks %}4{% else %}3{% endif %}"
-                            class="text-center text-muted py-4">
-                            No tasks have been created for this project yet.
-                        </td>
-                    </tr>
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-muted">No tasks found for this project.</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>

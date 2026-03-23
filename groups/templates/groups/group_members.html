@@ -3,70 +3,76 @@
 {% block title %}Group Members – {{ group.name }}{% endblock %}
 
 {% block content %}
-<h3 class="d-flex justify-content-between align-items-center mb-4">
-    <div>Group Members – <span class="text-muted">{{ group.name }}</span></div>
+<div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <a href="{% url 'group_detail' group.id %}"
-            class="btn btn-sm btn-outline-secondary">
-            ← Group Details
+        <h3 class="mb-0">Group Members</h3>
+        <span class="text-muted small">{{ group.name }}</span>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'group_detail' group.id %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Details
         </a>
         {% if user_can_manage_group %}
-            <a href="{% url 'group_member_add' group.id %}" class="btn btn-info btn-sm">+ Invite</a>
+            <a href="{% url 'group_member_add' group.id %}" class="btn btn-info btn-sm">
+                <i class="bi bi-plus"></i> Invite Member
+            </a>
         {% endif %}
     </div>
-</h3>
+</div>
 
-<div class="card shadow-sm">
-    <table class="table mb-0">
-        <thead class="table-light">
-            <tr>
-                <th>User</th>
-                <th>Role</th>
-                <th>Joined</th>
-                {% if user_can_manage_group %}  
-                    <th>Actions</th>
-                {% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for gm in group_members %}
-            <tr>
-                <td>
-                    {{ gm.user.username }}
-                    {% if gm.user == request.user %}
-                        <span class="badge bg-danger ms-1">You</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <span class="badge bg-secondary">
-                        {{ gm.get_role_display }}
-                    </span>
-                </td>
-                <td>{{ gm.joined_at|date:"d M Y" }}</td>
-                {% if user_can_manage_group and gm.user != group.owner %}
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">User</th>
+                    <th>Role</th>
+                    <th>Joined At</th>
+                    {% if user_can_manage_group %}<th class="text-end pe-4">Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for gm in group_members %}
+                <tr>
+                    <td class="ps-4">
+                        <span class="fw-bold">{{ gm.user.username }}</span>
+                        {% if gm.user == request.user %}
+                            <span class="badge bg-danger ms-1 small" style="font-size: 0.7rem;">YOU</span>
+                        {% endif %}
+                        {% if gm.user == group.owner %}
+                            <i class="bi bi-star-fill text-warning ms-1" title="Group Owner"></i>
+                        {% endif %}
+                    </td>
                     <td>
-                        <form method="post"
-                            action="{% url 'group_member_remove' group.id gm.user.id %}"
-                            onsubmit="return confirm('Remove this member from the group?');"
-                            style="display:inline;">
+                        <span class="badge {% if gm.role == 'admin' %}bg-warning text-dark{% else %}bg-secondary{% endif %} opacity-75">
+                            {{ gm.get_role_display }}
+                        </span>
+                    </td>
+                    <td class="text-muted small">{{ gm.joined_at|date:"d M Y" }}</td>
+                    
+                    {% if user_can_manage_group %}
+                    <td class="text-end pe-4">
+                        {% if gm.user != group.owner %}
+                        <form method="post" action="{% url 'group_member_remove' group.id gm.user.id %}" 
+                              onsubmit="return confirm('Remove this member?');" class="d-inline">
                             {% csrf_token %}
-                            <button type="submit"
-                                class="btn btn-link p-0 ms-2 text-danger"
-                                title="Delete">
-                                <i class="bi bi-trash"></i>
+                            <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                <i class="bi bi-person-x"></i>
                             </button>
                         </form>
+                        {% endif %}
                     </td>
-                {% endif %}
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="3" class="text-center text-muted py-3">
-                    No members in this group.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center py-5 text-muted">
+                        No members in this group.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

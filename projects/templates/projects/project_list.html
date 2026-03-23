@@ -3,96 +3,110 @@
 {% block title %}Projects{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-4">Assigned Projects</h3>
+<div class="d-flex justify-content-between align-items-end mb-4">
     <div>
-        <a href="{% url 'dashboard' %}"
-        class="btn btn-sm btn-outline-secondary">
-            ← Back
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}" class="text-decoration-none text-muted">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Projects</li>
+            </ol>
+        </nav>
+        <h3 class="fw-bold m-0">Assigned Projects</h3>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard' %}" class="btn btn-light border btn-sm px-3">
+            <i class="bi bi-arrow-left me-1"></i> Back
         </a>
-        <a href="/projects/create/" class="btn btn-success btn-sm">+ New Project</a>
+        <a href="/projects/create/" class="btn btn-primary btn-sm px-3 shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> New Project
+        </a>
     </div>
 </div>
 
-<div class="card shadow-sm">
+<div class="card border-0 shadow-sm overflow-hidden">
     <div class="card-body p-0">
-        <table class="table table-striped mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th>Name</th>
-                    <th>Owner</th>
-                    <th>Group</th>
-                    <th>Creation Date</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for project in projects %}
-                <tr>
-                    <td>
-                        <a href="{% url 'project_detail' project.id %}"
-                        class="fw-semibold text-dark text-decoration-none">
-                            {{ project.name }}
-                        </a>
-                    </td>
-                    <td>
-                        {{ project.owner.username }} 
-                        {% if project.owner == request.user %}
-                            <span class="badge bg-danger ms-1">You</span>
-                        {% endif %} 
-                    </td>
-                    <td>
-                        {% if project.assigned_groups.exists %}
-                            {% for g in project.assigned_groups.all %}
-                                <span class="badge bg-primary">{{ g.name }}</span>
-                            {% endfor %}
-                        {% else %}
-                            <span class="text-muted">No Group</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {{ project.created_at|date:"d M Y" }}
-                    </td>
-                    <td class="text-end">
-                        <div class="d-flex justify-content-end align-items-center gap-3">
-
-                            {% if request.user == project.owner %}
-                                <a href="{% url 'project_edit' project.id %}"
-                                data-bs-toggle="tooltip"
-                                title="Edit">
-                                    <i class="bi bi-pencil"></i>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3 text-uppercase fs-xs fw-semibold text-muted" style="font-size: 0.75rem; letter-spacing: 0.05em;">Project Name</th>
+                        <th class="py-3 text-uppercase fs-xs fw-semibold text-muted" style="font-size: 0.75rem; letter-spacing: 0.05em;">Owner</th>
+                        <th class="py-3 text-uppercase fs-xs fw-semibold text-muted" style="font-size: 0.75rem; letter-spacing: 0.05em;">Assigned Groups</th>
+                        <th class="py-3 text-uppercase fs-xs fw-semibold text-muted" style="font-size: 0.75rem; letter-spacing: 0.05em;">Created</th>
+                        <th class="pe-4 py-3 text-end text-uppercase fs-xs fw-semibold text-muted" style="font-size: 0.75rem; letter-spacing: 0.05em;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    {% for project in projects %}
+                    <tr>
+                        <td class="ps-4 py-3">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm me-3 bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                    <i class="bi bi-folder2 fs-5"></i>
+                                </div>
+                                <div>
+                                    <a href="{% url 'project_detail' project.id %}" class="text-dark fw-bold text-decoration-none hover-primary">
+                                        {{ project.name }}
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span class="text-secondary">{{ project.owner.username }}</span>
+                                {% if project.owner == request.user %}
+                                    <span class="badge rounded-pill bg-info bg-opacity-10 text-info ms-2 fw-medium">You</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-1">
+                                {% if project.assigned_groups.exists %}
+                                    {% for g in project.assigned_groups.all %}
+                                        <span class="badge border text-dark fw-normal bg-white">{{ g.name }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted small italic">No Group</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="text-muted small">
+                                <i class="bi bi-calendar3 me-1"></i> {{ project.created_at|date:"d M Y" }}
+                            </span>
+                        </td>
+                        <td class="pe-4 text-end">
+                            <div class="btn-group shadow-sm-hover">
+                                <a href="{% url 'project_members' project.id %}" class="btn btn-sm btn-light border-0" title="Members">
+                                    <i class="bi bi-people text-primary"></i>
                                 </a>
-                            {% endif %}
-                            <a href="{% url 'project_members' project.id %}"
-                            data-bs-toggle="tooltip"
-                            title="View members">
-                                <i class="bi bi-people-fill fs-5 text-primary"></i>
-                            </a>
-                            {% if request.user == project.owner %}
-                                <form method="post"
-                                    action="{% url 'project_delete' project.id %}"
-                                    onsubmit="return confirm('Are you sure you want to delete this project?');"
-                                    style="display:inline;">
-                                    {% csrf_token %}
-                                    <button type="submit"
-                                        class="btn btn-link p-0 ms-2 text-danger"
-                                        title="Delete">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted py-3">
-                        No projects found.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                                {% if request.user == project.owner %}
+                                    <a href="{% url 'project_edit' project.id %}" class="btn btn-sm btn-light border-0" title="Edit">
+                                        <i class="bi bi-pencil-square text-dark"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'project_delete' project.id %}" 
+                                          onsubmit="return confirm('Delete this project?');" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-light border-0" title="Delete">
+                                            <i class="bi bi-trash3 text-danger"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="60" class="opacity-25 mb-3" alt="Empty">
+                            <p class="text-muted">No projects found in your workspace.</p>
+                            <a href="/projects/create/" class="btn btn-sm btn-primary">Create First Project</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

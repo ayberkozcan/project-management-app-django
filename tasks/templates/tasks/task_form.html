@@ -1,77 +1,61 @@
 {% extends "base.html" %}
 
-{% block title %}
-    {% if object %}Edit Task{% else %}Create Task{% endif %}
-{% endblock %}
+{% block title %}{% if object %}Edit{% else %}Create{% endif %} Task{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-body">
-
-                <h5 class="mb-3">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h4 class="fw-bold mb-4">
                     {% if object %}
-                        Edit Task – <span class="text-muted">{{ object.name }}</span>
+                        <i class="bi bi-pencil-square text-primary me-2"></i>Edit Task
                     {% else %}
-                        Create Task – <span class="text-muted">{{ project.name }}</span>
+                        <i class="bi bi-plus-circle text-primary me-2"></i>New Task for {{ project.name }}
                     {% endif %}
-                </h5>
+                </h4>
 
-                {% if form.errors %}
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    Please fix the error below.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endif %}
-
-                <form method="post">
+                <form method="post" novalidate>
                     {% csrf_token %}
 
                     <div class="mb-3">
-                        {{ form.name.label_tag }}
+                        <label class="form-label fw-bold small text-muted text-uppercase">Task Name</label>
                         {{ form.name }}
-                        {{ form.name.errors }}
                     </div>
 
                     <div class="mb-3">
-                        {{ form.description.label_tag }}
+                        <label class="form-label fw-bold small text-muted text-uppercase">Description</label>
                         {{ form.description }}
-                        {{ form.description.errors }}
                     </div>
 
-                    <div class="mb-3">
-                        {{ form.deadline.label_tag }}
-                        {{ form.deadline }}
-                        {{ form.deadline.errors }}
-                    </div>
-
-                    <div class="mb-3">
-                        {{ form.assigned_group.label_tag }}
-                        {{ form.assigned_group }}
-                    </div>
-
-                    <div class="mb-3">
-                        {{ form.assignees.label_tag }}
-                        {{ form.assignees }}
-                        <div class="form-text text-muted">
-                            You can assign up to 5 users to this task.
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Deadline</label>
+                            {{ form.deadline }}
                         </div>
-                        {{ form.assignees.errors }}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Assign to Group</label>
+                            {{ form.assigned_group }}
+                        </div>
                     </div>
 
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'project_tasks' project.id %}"
-                           class="btn btn-outline-secondary">
-                            ← Back
-                        </a>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Assign Individual Members</label>
+                        {{ form.assignees }}
+                        <div class="form-text opacity-75 small">Hold Ctrl (or Cmd) to select multiple members.</div>
+                    </div>
 
-                        <button class="btn btn-primary">
-                            {% if object %}Save Changes{% else %}Create Task{% endif %}
+                    <div class="d-flex justify-content-between align-items-center border-top pt-4">
+                        {% if object %}
+                            <a href="{% url 'tasks:task_detail' task.id %}" class="btn btn-light border px-4">Cancel</a>
+                        {% else %}
+                            <a href="{% url 'project_tasks' project.id %}" class="btn btn-light border px-4">Back</a>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                            {% if object %}Update Task{% else %}Create Task{% endif %}
                         </button>
                     </div>
                 </form>
-
             </div>
         </div>
     </div>

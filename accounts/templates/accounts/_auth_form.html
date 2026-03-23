@@ -2,25 +2,40 @@
     {% csrf_token %}
 
     {% if form.non_field_errors %}
-        <div class="alert alert-danger">
-            {{ form.non_field_errors }}
-        </div>
+        {% for error in form.non_field_errors %}
+            <div class="alert alert-danger border-0 bg-danger bg-opacity-10 text-danger small py-2 mb-3" role="alert">
+                <i class="bi bi-exclamation-circle me-2"></i> {{ error }}
+            </div>
+        {% endfor %}
     {% endif %}
 
     {% for field in form %}
         <div class="mb-3">
-            <label class="form-label">{{ field.label }}</label>
+            <label class="form-label fw-semibold text-muted small text-uppercase" for="{{ field.id_for_label }}">
+                {{ field.label }}
+            </label>
+            
             {{ field }}
 
             {% if field.errors %}
-                <div class="text-danger small">
-                    {{ field.errors }}
+                {% for error in field.errors %}
+                    <div class="invalid-feedback d-block mt-1" style="font-size: 0.8rem;">
+                        <i class="bi bi-x-circle me-1"></i> {{ error|striptags }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% if field.help_text %}
+                <div class="form-text text-muted small" style="font-size: 0.7rem;">
+                    {{ field.help_text|safe }}
                 </div>
             {% endif %}
         </div>
     {% endfor %}
 
-    <button type="submit" class="btn btn-primary w-100">
-        {{ submit_text }}
-    </button>
+    <div class="d-grid gap-2 mt-4">
+        <button type="submit" class="btn btn-primary py-2 fw-bold shadow-sm">
+            {{ submit_text }}
+        </button>
+    </div>
 </form>

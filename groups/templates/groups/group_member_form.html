@@ -4,51 +4,58 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-body">
+    <div class="col-md-6 col-lg-5">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'group_list' %}" class="text-decoration-none text-muted">Groups</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'group_members' group.id %}" class="text-decoration-none text-muted">{{ group.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add Member</li>
+            </ol>
+        </nav>
 
-                <h5 class="mb-3">
-                    Add Member – <span class="text-muted">{{ group.name }}</span>
-                </h5>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="avatar-sm me-3 bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                        <i class="bi bi-person-plus-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold m-0">Add Member</h4>
+                        <small class="text-muted">to {{ group.name }}</small>
+                    </div>
+                </div>
 
                 {% if form.errors %}
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    Please fix the error below.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="alert alert-danger border-0 bg-danger bg-opacity-10 text-danger small py-2" role="alert">
+                    <i class="bi bi-person-fill-exclamation me-2"></i> User not found or already in group.
                 </div>
                 {% endif %}
 
-                <form method="post">
+                <form method="post" novalidate>
                     {% csrf_token %}
 
-                    <div class="mb-3">
-                        {{ form.identifier.label_tag }}
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-muted small text-uppercase">Username or Email</label>
                         {{ form.identifier }}
+                        <div class="form-text text-muted" style="font-size: 0.75rem;">
+                            The user will receive an invitation to join this group.
+                        </div>
                         {% if form.identifier.errors %}
-                            <div class="text-danger small">
+                            <div class="invalid-feedback d-block mt-1" style="font-size: 0.8rem;">
                                 {{ form.identifier.errors|striptags }}
                             </div>
                         {% endif %}
                     </div>
 
-                    {% comment %} <div class="mb-3">
-                        {{ form.role.label_tag }}
-                        {{ form.role }}
-                    </div> {% endcomment %}
-
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'group_members' group_id=group.id %}"
-                           class="btn btn-outline-secondary">
-                            ← Back
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between pt-2">
+                        <a href="{% url 'group_members' group_id=group.id %}" class="btn btn-light border px-4">
+                            Cancel
                         </a>
-
-                        <button class="btn btn-primary">
-                            Add Member
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            Send Invitation
                         </button>
                     </div>
                 </form>
-
             </div>
         </div>
     </div>
