@@ -19,12 +19,12 @@
                 <i class="bi bi-list-task me-1"></i> All Tasks
             </a>
             {% if task.owner == request.user %}
-                <a href="{% url 'task_edit' task.id %}" class="btn btn-primary btn-sm px-3 shadow-sm">
+                <a href="{% url 'task_edit' task.id %}" class="btn btn-outline-success btn-sm px-3 shadow-sm">
                     <i class="bi bi-pencil me-1"></i> Edit
                 </a>
                 <form method="post" action="{% url 'tasks:task_delete' task.id %}" onsubmit="return confirm('Delete this task?');" class="d-inline">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-danger btn-sm px-3">
+                    <button type="submit" class="btn btn-danger btn-sm px-3">
                         <i class="bi bi-trash"></i>
                     </button>
                 </form>

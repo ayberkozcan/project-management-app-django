@@ -30,7 +30,18 @@ def dashboard(request):
 
 @login_required
 def profile(request):
-    return render(request, "projects/profile.html")
+    projects_count = Project.objects.filter(users=request.user).count()
+    tasks_count = Task.objects.filter(assignees=request.user).count()
+    created_not_assigned_tasks_count = Task.objects.filter(Q(owner=request.user) & ~Q(assignees=request.user)).count()
+    groups_count = Group.objects.filter(group_members__user=request.user).count()
+    return render(request, "projects/profile.html", 
+        {
+            "projects_count": projects_count,
+            "assigned_tasks_count": tasks_count,
+            "created_not_assigned_tasks_count": created_not_assigned_tasks_count,
+            "groups_count": groups_count
+        }
+    )
 
 def user_is_project_admin(project, user):
     return (

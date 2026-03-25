@@ -9,11 +9,11 @@
         <span class="text-muted small">{{ group.name }}</span>
     </div>
     <div class="d-flex gap-2">
-        <a href="{% url 'group_detail' group.id %}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Back to Details
+        <a href="{% url 'group_detail' group.id %}" class="btn btn-light border btn-sm px-3 shadow-sm">
+            <i class="bi bi-arrow-left"></i> Details
         </a>
         {% if user_can_manage_group %}
-            <a href="{% url 'group_member_add' group.id %}" class="btn btn-info btn-sm">
+            <a href="{% url 'group_member_add' group.id %}" class="btn btn-primary btn-sm px-3 shadow-sm">
                 <i class="bi bi-plus"></i> Invite Member
             </a>
         {% endif %}

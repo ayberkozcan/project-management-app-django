@@ -55,7 +55,14 @@
                 <div class="col-md-4">
                     <div class="card shadow-sm border-0 bg-light">
                         <div class="card-body text-center">
-                            <h3 class="fw-bold mb-0">{{ assigned_tasks_count|default:"0" }}</h3>
+                            <div class="d-flex align-items-baseline justify-content-center gap-2">
+                                <h3 class="fw-bold mb-0">{{ assigned_tasks_count|default:"0" }}</h3>
+                                {% if created_not_assigned_tasks_count > 0 %}
+                                    <span class="text-muted medium opacity-85">
+                                        (+{{ created_not_assigned_tasks_count|default:"0" }})
+                                    </span>
+                                {% endif %}
+                            </div>
                             <span class="text-muted small">Active Tasks</span>
                         </div>
                     </div>

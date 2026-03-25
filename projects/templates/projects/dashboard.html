@@ -39,9 +39,11 @@
                         <p class="card-text display-6 fw-bold mb-0">
                             {{ assigned_tasks_count|default:"0" }}
                         </p>
-                        <span class="text-muted medium opacity-85">
-                            (+{{ created_not_assigned_tasks_count|default:"0" }})
-                        </span>
+                        {% if created_not_assigned_tasks_count > 0 %}
+                            <span class="text-muted medium opacity-85">
+                                (+{{ created_not_assigned_tasks_count|default:"0" }})
+                            </span>
+                        {% endif %}
                     </div>
                 </div>
                 {% if assigned_tasks_count <= 0 %}
