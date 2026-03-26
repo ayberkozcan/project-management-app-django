@@ -20,6 +20,7 @@ urlpatterns = [
     path("<int:project_id>/tasks/add/", AddTaskView.as_view(), name="task_add"),
     path("tasks/<int:pk>/edit/", TaskUpdateView.as_view(), name="task_edit"),
     
-    path("<int:project_id>/comments/", ProjectMembersView.as_view(), name="project_comments"),
+    path("<int:project_id>/comments/", ProjectCommentListView.as_view(), name="project_comments"),
+    path("<int:project_id>/comments/<int:comment_id>/delete/", delete_project_comment, name="project_comment_delete"),
     path("<int:project_id>/activitylogs/", ProjectMembersView.as_view(), name="project_activity"),
 ]

@@ -14,6 +14,8 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+from projects.activity import log_activity
+from projects.models import ActivityLog
 
 def is_project_admin(user, project):
     if project.owner == user:
@@ -56,7 +58,15 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.owner = self.request.user
         form.instance.project = self.project
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        log_activity(
+            actor=self.request.user,
+            project=self.project,
+            task=self.object,
+            action_type=ActivityLog.ACTION_TASK,
+            description=f"created task {self.object.name}",
+        )
+        return response
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -88,14 +98,38 @@ class TaskEditView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse("tasks:task_detail", args=[self.object.id])
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        log_activity(
+            actor=self.request.user,
+            project=self.object.project,
+            task=self.object,
+            action_type=ActivityLog.ACTION_TASK,
+            description=f"updated task {self.object.name}",
+        )
+        return response
+
 class TaskDeleteView(LoginRequiredMixin, DeleteView):
     model = Task
     
     def get_queryset(self):
-        return Project.objects.filter(owner=self.request.user)
+        return Task.objects.filter(owner=self.request.user)
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        project = self.object.project
+        task_name = self.object.name
+        response = super().delete(request, *args, **kwargs)
+        log_activity(
+            actor=request.user,
+            project=project,
+            action_type=ActivityLog.ACTION_TASK,
+            description=f"deleted task {task_name}",
+        )
+        return response
 
     def get_success_url(self):
-        return reverse("task_list")
+        return reverse("project_detail", args=[self.object.project_id])
 
 class TaskDetailView(LoginRequiredMixin, DetailView):
     model = Task
@@ -136,6 +170,14 @@ def assign_group_to_task(request, task_id):
     task.save(update_fields=["assigned_group"])
 
     task.assignees.add(*group.members.all())
+    log_activity(
+        actor=request.user,
+        project=project,
+        group=group,
+        task=task,
+        action_type=ActivityLog.ACTION_TASK,
+        description=f"assigned group {group.name} to task {task.name}",
+    )
 
     messages.success(request, "The task has been successfully assigned to the group.")
     return redirect("task_detail", task.id)
@@ -174,6 +216,13 @@ def assign_individual_to_task(request, task_id):
     task.save(update_fields=["assigned_group"])
 
     task.assignees.add(user)
+    log_activity(
+        actor=request.user,
+        project=project,
+        task=task,
+        action_type=ActivityLog.ACTION_TASK,
+        description=f"assigned {user.username} to task {task.name}",
+    )
 
     messages.success(request, "The task has been successfully assigned to the user.")
     return redirect("tasks:task_detail", task.id)

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}All Activity{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1 fw-bold">All Activity</h2>
+            <p class="text-muted small mb-0">Your recent actions across projects and tasks.</p>
+        </div>
+        <a href="{% url 'profile' %}" class="btn btn-light border btn-sm px-3 shadow-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-clock-history me-1"></i> Activity</span>
+            <span class="badge bg-light text-dark border">{{ page_obj.paginator.count }}</span>
+        </div>
+        <div class="card-body p-0">
+            {% if activities %}
+                <ul class="list-group list-group-flush">
+                    {% for activity in activities %}
+                        <li class="list-group-item p-3 border-0 border-bottom">
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <div class="d-flex gap-3">
+                                    <div>
+                                        <i class="bi {{ activity.icon_class }}"></i>
+                                    </div>
+                                    <div>
+                                        <p class="mb-1 small fw-medium">{{ activity.description }}</p>
+                                        <div class="text-muted small d-flex flex-wrap gap-2">
+                                            <span>{{ activity.created_at|date:"d M Y H:i" }}</span>
+                                            <span>•</span>
+                                            <a href="{% url 'project_detail' activity.project.id %}" class="text-decoration-none">Project: {{ activity.project.name }}</a>
+                                            {% if activity.task %}
+                                                <span>•</span>
+                                                <a href="{% url 'tasks:task_detail' activity.task.id %}" class="text-decoration-none">Task: {{ activity.task.name }}</a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="badge bg-light text-dark border">{{ activity.get_action_type_display }}</span>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% if is_paginated %}
+                    <div class="d-flex justify-content-between align-items-center border-top px-3 py-3">
+                        <span class="text-muted small">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                        <div class="d-flex gap-2">
+                            {% if page_obj.has_previous %}
+                                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-sm btn-light border">Previous</a>
+                            {% endif %}
+                            {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-sm btn-light border">Next</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="p-4 text-center">
+                    <p class="text-muted mb-0 small">No activity to display.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

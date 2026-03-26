@@ -2,14 +2,14 @@ from django import forms
 
 from groups.models import Group
 from tasks.models import Task
-from .models import Project, ProjectMember
+from .models import Comment, Project, ProjectMember
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ["name", "description"]
+        fields = ["name", "description", "deadline"]
         widgets = {
             "name": forms.TextInput(attrs={
                 "class": "form-control",
@@ -19,6 +19,10 @@ class ProjectForm(forms.ModelForm):
                 "class": "form-control",
                 "placeholder": "Project description",
                 "rows": 4
+            }),
+            "deadline": forms.DateTimeInput(attrs={
+                "class": "form-control",
+                "type": "datetime-local"
             }),
         }
 
@@ -106,3 +110,81 @@ class ProjectTaskForm(forms.ModelForm):
         if assignees and assignees.count() > MAX_ASSIGNEES:
             raise forms.ValidationError(f"You can assign at most {MAX_ASSIGNEES} users to this task.")
         return assignees
+
+
+class ProjectCommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ["task", "content"]
+        widgets = {
+            "task": forms.Select(attrs={"class": "form-select"}),
+            "content": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "maxlength": Comment.MAX_CONTENT_LENGTH,
+                    "placeholder": "Write a short project comment...",
+                }
+            ),
+        }
+
+    def __init__(self, *args, project=None, **kwargs):
+        self.project = project
+        super().__init__(*args, **kwargs)
+        self.fields["task"].required = False
+        self.fields["task"].empty_label = "General project comment"
+        self.fields["task"].queryset = (
+            project.tasks.order_by("name") if project else Task.objects.none()
+        )
+
+    def clean_task(self):
+        task = self.cleaned_data.get("task")
+        if task and self.project and task.project_id != self.project.id:
+            raise forms.ValidationError("Selected task does not belong to this project.")
+        return task
+
+
+class GroupCommentForm(forms.ModelForm):
+    project = forms.ModelChoiceField(
+        queryset=Project.objects.none(),
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    class Meta:
+        model = Comment
+        fields = ["project", "task", "content"]
+        widgets = {
+            "task": forms.Select(attrs={"class": "form-select"}),
+            "content": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "maxlength": Comment.MAX_CONTENT_LENGTH,
+                    "placeholder": "Write a short group comment...",
+                }
+            ),
+        }
+
+    def __init__(self, *args, group=None, **kwargs):
+        self.group = group
+        super().__init__(*args, **kwargs)
+        allowed_projects = group.projects.order_by("name") if group else Project.objects.none()
+        self.fields["project"].queryset = allowed_projects
+        self.fields["task"].required = False
+        self.fields["task"].empty_label = "General group comment"
+        self.fields["task"].queryset = Task.objects.filter(
+            project__in=allowed_projects
+        ).select_related("project").order_by("project__name", "name")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        project = cleaned_data.get("project")
+        task = cleaned_data.get("task")
+
+        if self.group and project and not self.group.projects.filter(id=project.id).exists():
+            self.add_error("project", "Selected project is not assigned to this group.")
+
+        if task and project and task.project_id != project.id:
+            self.add_error("task", "Selected task does not belong to the chosen project.")
+
+        return cleaned_data

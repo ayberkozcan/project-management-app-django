@@ -39,7 +39,7 @@
                     {% endfor %}
 
                     <div class="d-flex justify-content-between mt-4">
-                        <a href="{% url 'project_list' %}" class="btn btn-light text-muted">Cancel</a>
+                        <a href="{% if object %}{% url 'project_detail' object.id %}{% else %}{% url 'project_list' %}{% endif %}" class="btn btn-light text-muted">Cancel</a>
                         <button type="submit" class="btn btn-primary px-4">Save Changes</button>
                     </div>
                 </form>

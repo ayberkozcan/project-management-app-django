@@ -3,70 +3,135 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Welcome, {{ request.user.username }}!</h2>
-
-<div class="row g-4">
-    <div class="col-md-6 col-lg-3">
-        <div class="card shadow-sm h-100 border-0">
-            <div class="card-body d-flex flex-column justify-content-between">
-                <div>
-                    <h5 class="card-title text-muted small uppercase">Assigned Projects</h5>
-                    <p class="card-text display-6 fw-bold">{{ projects_count|default:"0" }}</p>
+<div class="container-fluid px-0">
+    <div class="card border-0 shadow-sm overflow-hidden mb-4">
+        <div class="card-body p-4 p-lg-5" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(14, 165, 233, 0.08));">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <div class="text-uppercase text-muted small fw-semibold mb-2">Workspace Overview</div>
+                    <h2 class="fw-bold mb-2">
+                        Welcome back{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}.
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Track your projects, groups, tasks, and recent activity from one place.
+                    </p>
                 </div>
-                <a href="{% url 'project_list' %}" class="btn btn-primary btn-sm mt-3">View Projects</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6 col-lg-3">
-        <div class="card shadow-sm h-100 border-0">
-            <div class="card-body d-flex flex-column justify-content-between">
-                <div>
-                    <h5 class="card-title text-muted small uppercase">Groups</h5>
-                    <p class="card-text display-6 fw-bold">{{ groups_count|default:"0" }}</p>
-                </div>
-                <a href="{% url 'group_list' %}" class="btn btn-primary btn-sm mt-3">View Groups</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6 col-lg-3">
-        <div class="card shadow-sm h-100 border-0">
-            <div class="card-body d-flex flex-column justify-content-between">
-                <div>
-                    <h5 class="card-title text-muted small uppercase">Tasks</h5>
-                    <div class="d-flex align-items-baseline gap-2">
-                        <p class="card-text display-6 fw-bold mb-0">
-                            {{ assigned_tasks_count|default:"0" }}
-                        </p>
-                        {% if created_not_assigned_tasks_count > 0 %}
-                            <span class="text-muted medium opacity-85">
-                                (+{{ created_not_assigned_tasks_count|default:"0" }})
-                            </span>
-                        {% endif %}
+                <div class="col-lg-4">
+                    <div class="d-grid gap-2 d-lg-flex justify-content-lg-end">
+                        <a href="{% url 'project_create' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i> New Project
+                        </a>
+                        <a href="{% url 'group_create' %}" class="btn btn-light border">
+                            <i class="bi bi-people me-1"></i> New Group
+                        </a>
                     </div>
                 </div>
-                {% if assigned_tasks_count <= 0 %}
-                    <button class="btn btn-outline-secondary btn-sm mt-3" disabled>No Tasks</button>
-                {% else %}
-                    <a href="{% url 'assigned_tasks_list' %}" class="btn btn-primary btn-sm mt-3">View Tasks</a>
-                {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-3">
-        <div class="card shadow-sm h-100 border-0">
-            <div class="card-body d-flex flex-column justify-content-between">
-                <div>
-                    <h5 class="card-title text-muted small uppercase">Recent Activity</h5>
-                    <p class="card-text text-muted small italic">No recent activity</p>
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body p-4">
+                    <div class="text-muted small text-uppercase fw-semibold mb-2">Assigned Projects</div>
+                    <div class="d-flex align-items-end justify-content-between">
+                        <h2 class="fw-bold mb-0">{{ projects_count|default:"0" }}</h2>
+                        <i class="bi bi-stack text-primary fs-4"></i>
+                    </div>
+                    <a href="{% url 'project_list' %}" class="btn btn-primary btn-sm mt-4">View Projects</a>
                 </div>
-                <button class="btn btn-outline-secondary btn-sm mt-3" disabled>View Activity</button>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body p-4">
+                    <div class="text-muted small text-uppercase fw-semibold mb-2">Groups</div>
+                    <div class="d-flex align-items-end justify-content-between">
+                        <h2 class="fw-bold mb-0">{{ groups_count|default:"0" }}</h2>
+                        <i class="bi bi-people text-primary fs-4"></i>
+                    </div>
+                    <a href="{% url 'group_list' %}" class="btn btn-primary btn-sm mt-4">View Groups</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body p-4">
+                    <div class="text-muted small text-uppercase fw-semibold mb-2">Assigned Tasks</div>
+                    <div class="d-flex align-items-end justify-content-between">
+                        <div class="d-flex align-items-baseline gap-2">
+                            <h2 class="fw-bold mb-0">{{ assigned_tasks_count|default:"0" }}</h2>
+                            {% if created_not_assigned_tasks_count > 0 %}
+                                <span class="text-muted small">(+{{ created_not_assigned_tasks_count|default:"0" }})</span>
+                            {% endif %}
+                        </div>
+                        <i class="bi bi-check2-square text-primary fs-4"></i>
+                    </div>
+                    {% if assigned_tasks_count <= 0 %}
+                        <button class="btn btn-outline-secondary btn-sm mt-4" disabled>No Tasks</button>
+                    {% else %}
+                        <a href="{% url 'assigned_tasks_list' %}" class="btn btn-primary btn-sm mt-4">View Tasks</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body p-4">
+                    <div class="text-muted small text-uppercase fw-semibold mb-2">Recent Activity</div>
+                    {% if activities %}
+                        <p class="small fw-medium mb-1">{{ activities.0.description }}</p>
+                        <p class="text-muted small mb-0">{{ activities.0.created_at|timesince }} ago</p>
+                    {% else %}
+                        <p class="text-muted small mb-0">No recent activity</p>
+                    {% endif %}
+                    <a href="{% url 'all_activity' %}" class="btn btn-primary btn-sm mt-4">View Activity</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white fw-semibold py-3 d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clock-history me-1"></i> Recent Activity</span>
+                    {% if activities %}
+                        <a href="{% url 'all_activity' %}" class="text-decoration-none small">View all activity</a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if activities %}
+                        <ul class="list-group list-group-flush">
+                            {% for activity in activities %}
+                                <li class="list-group-item p-3 border-0 border-bottom">
+                                    <div class="d-flex justify-content-between align-items-center gap-3">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <div class="mt-1">
+                                                <i class="bi {{ activity.icon_class }}"></i>
+                                            </div>
+                                            <div>
+                                                <p class="mb-1 small fw-medium">{{ activity.description }}</p>
+                                                <small class="text-muted">{{ activity.created_at|timesince }} ago</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-light text-dark border">{{ activity.get_action_type_display }}</span>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="p-5 text-center">
+                            <p class="text-muted mb-0 small">No recent activity to display.</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<hr class="my-5">
 {% endblock %}

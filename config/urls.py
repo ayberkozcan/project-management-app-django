@@ -15,8 +15,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.conf import settings
+from django.conf.urls.static import static
 from django.urls import include, path
-from projects.views import dashboard, profile
+from projects.views import AllActivityView, dashboard, edit_profile, profile
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -28,5 +30,10 @@ urlpatterns = [
 
     path("", dashboard, name="dashboard"),
     path("dashboard/", dashboard, name="dashboard"),
-    path("profile/", profile, name="profile")
+    path("profile/", profile, name="profile"),
+    path("profile/edit/", edit_profile, name="edit_profile"),
+    path("profile/activity/", AllActivityView.as_view(), name="all_activity"),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

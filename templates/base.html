@@ -69,7 +69,28 @@
             font-weight: 500;
         }
 
+        .sidebar .sidebar-button {
+            width: 100%;
+            color: #94a3b8;
+            text-decoration: none;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            transition: all 0.3s ease;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+        }
+
         .sidebar a:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+
+        .sidebar .sidebar-button:hover {
             background: rgba(255,255,255,0.05);
             color: #fff;
         }
@@ -159,7 +180,7 @@
                 <i class="bi bi-grid-1x2"></i> Dashboard
             </a>
             
-            <small class="text-uppercase text-muted fw-bold mt-4 mb-2 px-3" style="font-size: 0.65rem;">Workspace</small>
+            <small class="text-uppercase fw-bold mt-4 mb-2 px-3 d-block" style="font-size: 0.65rem; color: #64748b;">Workspace</small>
             
             <a href="/projects/" class="{% if 'project' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="bi bi-stack"></i> Projects
@@ -177,7 +198,13 @@
                 <a href="/profile/" class="{% if 'profile' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="bi bi-person-circle"></i> Profile
                 </a>
-                </div>
+                <form method="post" action="{% url 'logout' %}" onsubmit="return confirm('Are you sure you want to log out?');">
+                    {% csrf_token %}
+                    <button type="submit" class="sidebar-button">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </button>
+                </form>
+            </div>
         </div>
         {% endif %}
     </div>
@@ -211,7 +238,11 @@
             
             <div class="ms-3 d-flex align-items-center">
                 <span class="me-2 small fw-bold">{{ user.username }}</span>
-                <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=random" class="rounded-circle border" width="35" alt="user">
+                {% if user.is_authenticated and user.avatar %}
+                    <img src="{{ user.avatar.url }}" class="rounded-circle border object-fit-cover" width="35" height="35" alt="user">
+                {% else %}
+                    <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=random" class="rounded-circle border" width="35" height="35" alt="user">
+                {% endif %}
             </div>
         </div>
 

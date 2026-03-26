@@ -34,6 +34,7 @@
     <div class="d-flex text-muted small mb-4 gap-3">
         <span><i class="bi bi-folder-fill me-1"></i>{{ group.projects.count }} Projects</span>
         <span><i class="bi bi-people-fill me-1"></i>{{ group.group_members.count }} Members</span>
+        <span><i class="bi bi-chat-left-text me-1"></i>{{ group.comments.count }} Comments</span>
     </div>
 
     <div class="row g-4">
@@ -104,6 +105,125 @@
                         {% endif %}
                     {% else %}
                         <p class="text-muted mb-0 small italic">No members added yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-chat-left-text me-1 text-primary"></i> Comments</span>
+                    <div class="d-flex align-items-center gap-2">
+                        {% if total_comment_count > 0 %}
+                            <a href="{% url 'group_comments' group.id %}" class="btn btn-sm btn-link text-decoration-none">View all</a>
+                        {% endif %}
+                        <span class="badge bg-light text-dark border">{{ total_comment_count }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if comments %}
+                        <div class="mb-4">
+                            {% for comment in comments %}
+                                <div class="border rounded-3 p-3 {% if not forloop.last %}mb-3{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                                        <div>
+                                            <div class="fw-semibold small">{{ comment.author.username }}</div>
+                                            <div class="text-muted small">
+                                                Project: {{ comment.project.name }}
+                                                {% if comment.task %}
+                                                    | Task: {{ comment.task.name }}
+                                                {% else %}
+                                                    | Task: General
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="text-muted small d-block">{{ comment.created_at|date:"d M Y H:i" }}</span>
+                                            {% if can_manage_comments %}
+                                                <form method="post" action="{% url 'group_comment_delete' group.id comment.id %}" class="mt-2">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                                    <button type="submit" class="btn btn-link btn-sm text-danger text-decoration-none p-0">Delete</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <p class="text-muted small mb-0">{{ comment.content }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if remaining_comment_count > 0 %}
+                            <div class="text-center mb-4">
+                                <a href="{% url 'group_comments' group.id %}" class="text-muted small">+{{ remaining_comment_count }} more comments...</a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="border rounded-3 p-4 text-center text-muted small mb-4">
+                            No comments yet.
+                        </div>
+                    {% endif %}
+
+                    {% if group.projects.exists %}
+                        <form method="post" class="border rounded-3 p-3 bg-white">
+                            {% csrf_token %}
+                            <label for="{{ comment_form.project.id_for_label }}" class="form-label small text-uppercase text-muted fw-semibold">Project</label>
+                            {{ comment_form.project }}
+                            {% if comment_form.project.errors %}
+                                <div class="text-danger small mt-1">{{ comment_form.project.errors|join:", " }}</div>
+                            {% endif %}
+
+                            <label for="{{ comment_form.task.id_for_label }}" class="form-label small text-uppercase text-muted fw-semibold mt-3">Related Task</label>
+                            {{ comment_form.task }}
+                            {% if comment_form.task.errors %}
+                                <div class="text-danger small mt-1">{{ comment_form.task.errors|join:", " }}</div>
+                            {% endif %}
+
+                            <label for="{{ comment_form.content.id_for_label }}" class="form-label small text-uppercase text-muted fw-semibold mt-3">Add Comment</label>
+                            {{ comment_form.content }}
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="text-muted small">Choose a project, optionally a task, then post. Max 200 characters.</span>
+                                <button type="submit" class="btn btn-primary btn-sm px-3">Post Comment</button>
+                            </div>
+                            {% if comment_form.content.errors %}
+                                <div class="text-danger small mt-2">{{ comment_form.content.errors|join:", " }}</div>
+                            {% endif %}
+                            {% if comment_form.non_field_errors %}
+                                <div class="text-danger small mt-2">{{ comment_form.non_field_errors|join:", " }}</div>
+                            {% endif %}
+                        </form>
+                    {% else %}
+                        <div class="border rounded-3 p-4 text-center text-muted small">
+                            Assign at least one project to this group before adding comments.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clock-history me-1 text-primary"></i> Recent Activity</span>
+                    <span class="text-muted small">Latest updates</span>
+                </div>
+                <div class="card-body">
+                    {% if recent_activities %}
+                        {% for activity in recent_activities %}
+                            <div class="d-flex gap-3 {% if not forloop.last %}mb-3{% endif %}">
+                                <div>
+                                    <i class="bi {{ activity.icon_class }}"></i>
+                                </div>
+                                <div>
+                                    <p class="small mb-1"><strong>{{ activity.actor.username }}</strong> {{ activity.description }}</p>
+                                    <p class="text-muted small mb-0">{{ activity.created_at|timesince }} ago</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted small mb-0">No recent activity yet.</p>
                     {% endif %}
                 </div>
             </div>

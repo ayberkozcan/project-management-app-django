@@ -53,7 +53,7 @@
                     </div>
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-between pt-2">
-                        <a href="{% url 'group_list' %}" class="btn btn-light border px-4">
+                        <a href="{% if object %}{% url 'group_detail' object.id %}{% else %}{% url 'group_list' %}{% endif %}" class="btn btn-light border px-4">
                             Cancel
                         </a>
                         <button type="submit" class="btn btn-primary px-4 shadow-sm">

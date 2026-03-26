@@ -78,3 +78,23 @@ class AccountSignupForm(UserCreationForm):
             user.save()
 
         return user
+
+
+class ProfileEditForm(forms.ModelForm):
+    class Meta:
+        model = Account
+        fields = ("first_name", "last_name", "email", "avatar")
+        widgets = {
+            "first_name": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "First Name"}
+            ),
+            "last_name": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Last Name"}
+            ),
+            "email": forms.EmailInput(
+                attrs={"class": "form-control", "placeholder": "Email Address"}
+            ),
+            "avatar": forms.ClearableFileInput(
+                attrs={"class": "form-control"}
+            ),
+        }
