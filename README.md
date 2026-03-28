@@ -192,6 +192,12 @@ This project demonstrates more than basic CRUD:
 - better dashboards and analytics
 - live demo deployment
 
+## Third-Party Resources
+
+- Bootstrap
+- Bootstrap Icons
+- Google Fonts - Plus Jakarta Sans
+
 ## License
 
 MIT License
