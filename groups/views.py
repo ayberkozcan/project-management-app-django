@@ -36,6 +36,13 @@ def user_can_manage_group_comments(group, user):
         group.owner == user or
         group.group_members.filter(user=user, role="admin").exists()
     )
+
+
+def user_can_manage_group_members(group, user):
+    return (
+        group.owner == user or
+        group.group_members.filter(user=user, role="admin").exists()
+    )
     
 class GroupDetailView(LoginRequiredMixin, DetailView):
     model = Group
@@ -51,6 +58,11 @@ class GroupDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        gm = GroupMember.objects.filter(group=self.object, user=self.request.user).first()
+        context["can_manage_group"] = (
+            self.object.owner == self.request.user or
+            (gm and gm.role == "admin")
+        )
         context["comment_form"] = kwargs.get("comment_form") or GroupCommentForm(
             group=self.object
         )
@@ -195,6 +207,13 @@ class GroupMembersView(LoginRequiredMixin, ListView):
 
     def dispatch(self, request, *args, **kwargs):
         self.group = get_object_or_404(Group, id=kwargs["group_id"])
+
+        if not (
+            self.group.owner == request.user or
+            self.group.group_members.filter(user=request.user).exists()
+        ):
+            raise PermissionDenied
+
         return super().dispatch(request, *args, **kwargs)
     
     def get_queryset(self):
@@ -279,14 +298,7 @@ class SendGroupInviteView(LoginRequiredMixin, FormView):
     def dispatch(self, request, *args, **kwargs):
         self.group = get_object_or_404(Group, id=kwargs["group_id"])
 
-        if not (
-            self.group.owner == request.user or
-            GroupMember.objects.filter(
-                group=self.group,
-                user=request.user,
-                role="admin"
-            ).exists()
-        ):
+        if not user_can_manage_group_members(self.group, request.user):
             raise PermissionDenied
 
         return super().dispatch(request, *args, **kwargs)
@@ -450,8 +462,12 @@ def remove_group_member(request, group_id, member_id):
     
     group = get_object_or_404(Group, id=group_id)
 
-    if group.owner != request.user:
+    if not user_can_manage_group_members(group, request.user):
         raise PermissionDenied
+
+    if group.owner_id == member_id:
+        messages.error(request, "Group owner cannot be removed.")
+        return redirect("group_members", group_id=group.id)
     
     membership = get_object_or_404(
         GroupMember,

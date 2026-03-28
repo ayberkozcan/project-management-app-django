@@ -15,15 +15,16 @@ from django.db.models import Q
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from projects.activity import log_activity
-from projects.models import ActivityLog
+from projects.models import ActivityLog, ProjectMember
 
 def is_project_admin(user, project):
     if project.owner == user:
         return True
     
-    return Group.objects.filter(
+    return ProjectMember.objects.filter(
         project=project,
-        owner=user
+        user=user,
+        role="admin",
     ).exists()
 
 def check_project_admin(user, project):
@@ -86,7 +87,7 @@ class TaskEditView(LoginRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.object = self.get_object()
-        if self.object.owner != request.user:
+        if not is_project_admin(request.user, self.object.project):
             raise PermissionDenied("You are not allowed to edit this task.")
         return super().dispatch(request, *args, **kwargs)
 
@@ -113,7 +114,10 @@ class TaskDeleteView(LoginRequiredMixin, DeleteView):
     model = Task
     
     def get_queryset(self):
-        return Task.objects.filter(owner=self.request.user)
+        return Task.objects.filter(
+            Q(project__owner=self.request.user) |
+            Q(project__members__user=self.request.user, project__members__role="admin")
+        ).distinct()
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -138,9 +142,18 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         return (
-            Task.objects.filter(owner=self.request.user) |
+            Task.objects.filter(project__owner=self.request.user) |
+            Task.objects.filter(project__members__user=self.request.user) |
             Task.objects.filter(assignees=self.request.user)
         ).distinct()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_manage_task"] = is_project_admin(
+            self.request.user,
+            self.object.project,
+        )
+        return context
 
 @login_required
 @require_POST

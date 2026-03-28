@@ -52,7 +52,7 @@
                 <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-folder-fill me-1 text-primary"></i> Projects</span>
                     <a href="{% url 'group_projects' group.id %}" class="btn btn-sm btn-link text-decoration-none">
-                        {% if request.user == group.owner %}Manage{% else %}View all{% endif %}
+                        {% if can_manage_group %}Manage{% else %}View all{% endif %}
                     </a>
                 </div>
                 <div class="card-body p-0">
@@ -79,7 +79,7 @@
                 <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-person me-1 text-primary"></i> Members</span>
                     <a href="{% url 'group_members' group.id %}" class="btn btn-sm btn-link text-decoration-none">
-                        {% if request.user == group.owner %}Manage{% else %}View{% endif %}
+                        {% if can_manage_group %}Manage{% else %}View{% endif %}
                     </a>
                 </div>
                 <div class="card-body">

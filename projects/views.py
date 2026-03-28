@@ -110,6 +110,13 @@ def user_can_manage_project_comments(project, user):
         project.members.filter(user=user, role="admin").exists()
     )
 
+
+def user_can_manage_project_members(project, user):
+    return (
+        project.owner == user or
+        project.members.filter(user=user, role="admin").exists()
+    )
+
 class ProjectListView(LoginRequiredMixin, ListView):
     model = Project
     template_name = "projects/project_list.html"
@@ -261,6 +268,10 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["can_manage_project"] = user_can_manage_project_members(
+            self.object,
+            self.request.user,
+        )
         context["comment_form"] = kwargs.get("comment_form") or ProjectCommentForm(
             project=self.object
         )
@@ -374,11 +385,11 @@ class AddMemberView(LoginRequiredMixin, CreateView):
     login_url = "/accounts/login/"
 
     def dispatch(self, request, *args, **kwargs):
-        self.project = get_object_or_404(
-            Project,
-            id=kwargs["project_id"],
-            owner=request.user
-        )
+        self.project = get_object_or_404(Project, id=kwargs["project_id"])
+
+        if not user_can_manage_project_members(self.project, request.user):
+            raise PermissionDenied
+
         return super().dispatch(request, *args, **kwargs)
     
     def get_form_kwargs(self):
@@ -472,7 +483,7 @@ def remove_project_member(request, project_id, member_id):
     
     project = get_object_or_404(Project, id=project_id)
 
-    if project.owner != request.user:
+    if not user_can_manage_project_members(project, request.user):
         raise PermissionDenied
     
     membership = get_object_or_404(
@@ -603,6 +614,10 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["project"] = self.object.project
+        context["can_manage_task"] = user_is_project_admin(
+            self.object.project,
+            self.request.user,
+        )
         return context
 
     def form_valid(self, form):
