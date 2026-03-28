@@ -15,6 +15,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+from config.rate_limits import RateLimitMixin, rate_limit
 
 @login_required
 def dashboard(request):
@@ -59,12 +60,15 @@ def profile(request):
     )
 
 
-class AllActivityView(LoginRequiredMixin, ListView):
+class AllActivityView(LoginRequiredMixin, RateLimitMixin, ListView):
     model = ActivityLog
     template_name = "projects/activity_list.html"
     context_object_name = "activities"
     login_url = "/accounts/login/"
     paginate_by = 8
+    rate_limit = "60/m"
+    rate_limit_scope = "activity-list"
+    rate_limit_methods = {"GET"}
 
     def get_queryset(self):
         return (
@@ -117,21 +121,27 @@ def user_can_manage_project_members(project, user):
         project.members.filter(user=user, role="admin").exists()
     )
 
-class ProjectListView(LoginRequiredMixin, ListView):
+class ProjectListView(LoginRequiredMixin, RateLimitMixin, ListView):
     model = Project
     template_name = "projects/project_list.html"
     context_object_name = "projects"
     login_url = "/accounts/login/"
+    rate_limit = "60/m"
+    rate_limit_scope = "project-list"
+    rate_limit_methods = {"GET"}
 
     def get_queryset(self):
         user = self.request.user
         return Project.objects.filter(Q(owner=user) | Q(members__user=user)).distinct()
 
-class TaskListView(LoginRequiredMixin, ListView):
+class TaskListView(LoginRequiredMixin, RateLimitMixin, ListView):
     model = Task
     template_name = "tasks/assigned_tasks_list.html"
     context_object_name = "tasks"
     login_url = "/accounts/login/"
+    rate_limit = "60/m"
+    rate_limit_scope = "assigned-task-list"
+    rate_limit_methods = {"GET"}
 
     def get_queryset(self):
         user = self.request.user
@@ -193,12 +203,15 @@ class ProjectGroupsView(LoginRequiredMixin, ListView):
         context["project"] = self.get_project()
         return context
 
-class ProjectCreateView(LoginRequiredMixin, CreateView):
+class ProjectCreateView(LoginRequiredMixin, RateLimitMixin, CreateView):
     model = Project
     form_class = ProjectForm
     template_name = "projects/project_form.html"
     success_url = reverse_lazy("project_list")
     login_url = "/accounts/login/"
+    rate_limit = "10/h"
+    rate_limit_scope = "project-create"
+    rate_limit_methods = {"POST"}
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
@@ -293,6 +306,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         )
         return context
 
+    @rate_limit(scope="project-comment-create", rate="20/h", methods={"POST"})
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         form = ProjectCommentForm(request.POST, project=self.object)
@@ -320,12 +334,15 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         return self.render_to_response(context)
 
 
-class ProjectCommentListView(LoginRequiredMixin, ListView):
+class ProjectCommentListView(LoginRequiredMixin, RateLimitMixin, ListView):
     model = Comment
     template_name = "projects/project_comments.html"
     context_object_name = "comments"
     login_url = "/accounts/login/"
     paginate_by = 4
+    rate_limit = "60/m"
+    rate_limit_scope = "project-comment-list"
+    rate_limit_methods = {"GET"}
 
     def dispatch(self, request, *args, **kwargs):
         self.project = get_object_or_404(Project, id=kwargs["project_id"])
@@ -378,11 +395,14 @@ def delete_project_comment(request, project_id, comment_id):
 
     return redirect("project_comments", project_id=project.id)
 
-class AddMemberView(LoginRequiredMixin, CreateView):
+class AddMemberView(LoginRequiredMixin, RateLimitMixin, CreateView):
     model = ProjectMember
     form_class = ProjectMemberForm
     template_name = "projects/member_form.html"
     login_url = "/accounts/login/"
+    rate_limit = "20/h"
+    rate_limit_scope = "project-member-add"
+    rate_limit_methods = {"POST"}
 
     def dispatch(self, request, *args, **kwargs):
         self.project = get_object_or_404(Project, id=kwargs["project_id"])
@@ -423,10 +443,13 @@ class AddMemberView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse_lazy("project_members", kwargs={"project_id": self.project.id})
     
-class AddGroupView(LoginRequiredMixin, FormView):
+class AddGroupView(LoginRequiredMixin, RateLimitMixin, FormView):
     form_class = ProjectGroupForm
     template_name = "projects/group_form.html"
     login_url = "/accounts/login/"
+    rate_limit = "20/h"
+    rate_limit_scope = "project-group-add"
+    rate_limit_methods = {"POST"}
 
     def dispatch(self, request, *args, **kwargs):
         self.project = get_object_or_404(
@@ -507,11 +530,14 @@ def remove_project_member(request, project_id, member_id):
 
     return redirect("project_members", project_id=project.id)
 
-class ProjectTasksView(LoginRequiredMixin, ListView):
+class ProjectTasksView(LoginRequiredMixin, RateLimitMixin, ListView):
     model = Task
     template_name = "projects/project_tasks.html"
     context_object_name = "project_tasks"
     login_url = "/accounts/login/"
+    rate_limit = "60/m"
+    rate_limit_scope = "project-task-list"
+    rate_limit_methods = {"GET"}
 
     def dispatch(self, request, *args, **kwargs):
         self.project = get_object_or_404(Project, id=kwargs["project_id"])
@@ -541,11 +567,14 @@ class ProjectTasksView(LoginRequiredMixin, ListView):
         )
         return context
     
-class AddTaskView(LoginRequiredMixin, CreateView):
+class AddTaskView(LoginRequiredMixin, RateLimitMixin, CreateView):
     model = Task
     form_class = ProjectTaskForm
     template_name = "tasks/task_form.html"
     login_url = "/accounts/login/"
+    rate_limit = "30/h"
+    rate_limit_scope = "project-task-add"
+    rate_limit_methods = {"POST"}
 
     def dispatch(self, request, *args, **kwargs):
         self.project = get_object_or_404(Project, id=kwargs["project_id"])
@@ -592,11 +621,14 @@ class AddTaskView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse("project_tasks", kwargs={"project_id": self.project.id})
     
-class TaskUpdateView(LoginRequiredMixin, UpdateView):
+class TaskUpdateView(LoginRequiredMixin, RateLimitMixin, UpdateView):
     model = Task
     form_class = ProjectTaskForm
     template_name = "tasks/task_form.html"
     login_url = "/accounts/login/"
+    rate_limit = "60/h"
+    rate_limit_scope = "project-task-update"
+    rate_limit_methods = {"POST"}
 
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)

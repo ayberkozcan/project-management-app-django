@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 
@@ -9,6 +10,7 @@ from tasks.models import Task
 
 class DeletionCascadeTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.owner = Account.objects.create_user(
             email="owner@example.com",
             username="owner",
@@ -121,6 +123,7 @@ class DeletionCascadeTests(TestCase):
 
 class AuthorizationTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.owner = Account.objects.create_user(
             email="owner-auth@example.com",
             username="owner_auth",
@@ -367,3 +370,33 @@ class AuthorizationTests(TestCase):
         self.client.force_login(self.regular_member)
         self.assertEqual(self.client.get(add_url).status_code, 403)
         self.assertEqual(self.client.post(remove_url).status_code, 403)
+
+
+class RateLimitTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.owner = Account.objects.create_user(
+            email="owner-rate@example.com",
+            username="owner_rate",
+            password="testpass123",
+            first_name="Owner",
+            last_name="Rate",
+        )
+        self.project = Project.objects.create(
+            name="Rate Limited Project",
+            description="Rate limit checks",
+            owner=self.owner,
+        )
+        ProjectMember.objects.create(project=self.project, user=self.owner, role="admin")
+
+    def test_project_comments_are_rate_limited(self):
+        self.client.force_login(self.owner)
+        url = reverse("project_detail", kwargs={"pk": self.project.pk})
+
+        for index in range(20):
+            response = self.client.post(url, {"content": f"Comment {index}"})
+            self.assertEqual(response.status_code, 302)
+
+        response = self.client.post(url, {"content": "Comment overflow"})
+
+        self.assertEqual(response.status_code, 429)

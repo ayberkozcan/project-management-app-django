@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.views.decorators.http import require_POST
+from config.rate_limits import RateLimitMixin, rate_limit
 
 from projects.forms import GroupCommentForm, User
 from projects.activity import log_activity
@@ -18,11 +19,14 @@ from .models import Group, GroupInvite, GroupMember
 
 from groups.forms import GroupForm, GroupInviteForm, GroupMemberForm
 
-class GroupListView(LoginRequiredMixin, ListView):
+class GroupListView(LoginRequiredMixin, RateLimitMixin, ListView):
     model = Group
     template_name = "groups/group_list.html"
     context_object_name = "groups"
     login_url = "/accounts/login/"
+    rate_limit = "60/m"
+    rate_limit_scope = "group-list"
+    rate_limit_methods = {"GET"}
 
     def get_queryset(self):
         user = self.request.user
@@ -85,6 +89,7 @@ class GroupDetailView(LoginRequiredMixin, DetailView):
         )
         return context
 
+    @rate_limit(scope="group-comment-create", rate="20/h", methods={"POST"})
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         form = GroupCommentForm(request.POST, group=self.object)
@@ -113,12 +118,15 @@ class GroupDetailView(LoginRequiredMixin, DetailView):
         return self.render_to_response(context)
 
 
-class GroupCommentListView(LoginRequiredMixin, ListView):
+class GroupCommentListView(LoginRequiredMixin, RateLimitMixin, ListView):
     model = Comment
     template_name = "groups/group_comments.html"
     context_object_name = "comments"
     login_url = "/accounts/login/"
     paginate_by = 4
+    rate_limit = "60/m"
+    rate_limit_scope = "group-comment-list"
+    rate_limit_methods = {"GET"}
 
     def dispatch(self, request, *args, **kwargs):
         self.group = get_object_or_404(Group, id=kwargs["group_id"])
@@ -200,10 +208,13 @@ class GroupProjectsView(LoginRequiredMixin, ListView):
         context["group"] = self.get_group()
         return context
 
-class GroupMembersView(LoginRequiredMixin, ListView):
+class GroupMembersView(LoginRequiredMixin, RateLimitMixin, ListView):
     template_name = "groups/group_members.html"
     context_object_name = "group_members"
     login_url = "/accounts/login"
+    rate_limit = "60/m"
+    rate_limit_scope = "group-member-list"
+    rate_limit_methods = {"GET"}
 
     def dispatch(self, request, *args, **kwargs):
         self.group = get_object_or_404(Group, id=kwargs["group_id"])
@@ -231,12 +242,15 @@ class GroupMembersView(LoginRequiredMixin, ListView):
         
         return context
     
-class GroupCreateView(LoginRequiredMixin, CreateView):
+class GroupCreateView(LoginRequiredMixin, RateLimitMixin, CreateView):
     model = Group
     form_class = GroupForm
     template_name = "groups/group_form.html"
     success_url = reverse_lazy("group_list")
     login_url = "/accounts/login/"
+    rate_limit = "10/h"
+    rate_limit_scope = "group-create"
+    rate_limit_methods = {"POST"}
 
     def form_valid(self, form):
         group = form.save(commit=False)
@@ -291,9 +305,12 @@ class GroupDeleteView(LoginRequiredMixin, DeleteView):
     def get_success_url(self):
         return reverse("group_list")
 
-class SendGroupInviteView(LoginRequiredMixin, FormView):
+class SendGroupInviteView(LoginRequiredMixin, RateLimitMixin, FormView):
     form_class = GroupInviteForm
     template_name = "groups/group_member_form.html"
+    rate_limit = "20/h"
+    rate_limit_scope = "group-invite-send"
+    rate_limit_methods = {"POST"}
 
     def dispatch(self, request, *args, **kwargs):
         self.group = get_object_or_404(Group, id=kwargs["group_id"])

@@ -16,6 +16,7 @@ from django.contrib import messages
 from django.views.decorators.http import require_POST
 from projects.activity import log_activity
 from projects.models import ActivityLog, ProjectMember
+from config.rate_limits import RateLimitMixin, rate_limit
 
 def is_project_admin(user, project):
     if project.owner == user:
@@ -31,22 +32,28 @@ def check_project_admin(user, project):
     if not is_project_admin(user, project):
         raise PermissionDenied("You do not have permission to perform this action.")
 
-class TaskListView(LoginRequiredMixin, ListView):
+class TaskListView(LoginRequiredMixin, RateLimitMixin, ListView):
     model = Task
     template_name = "tasks/task_list.html"
     context_object_name = "tasks"
     login_url = "/accounts/login/"
+    rate_limit = "60/m"
+    rate_limit_scope = "task-list"
+    rate_limit_methods = {"GET"}
 
     def get_queryset(self):
         user = self.request.user
         return Task.objects.filter(Q(owner=user) | Q(assignees=user)).distinct()
 
-class TaskCreateView(LoginRequiredMixin, CreateView):
+class TaskCreateView(LoginRequiredMixin, RateLimitMixin, CreateView):
     model = Task
     form_class = TaskForm
     template_name = "tasks/task_form.html"
 
     login_url = "/accounts/login/"
+    rate_limit = "30/h"
+    rate_limit_scope = "task-create"
+    rate_limit_methods = {"POST"}
 
     def dispatch(self, request, *args, **kwargs):
         self.project = get_object_or_404(Project, id=self.kwargs["project_id"])
@@ -77,11 +84,14 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse("project_detail", args=[self.project.id])
     
-class TaskEditView(LoginRequiredMixin, UpdateView):
+class TaskEditView(LoginRequiredMixin, RateLimitMixin, UpdateView):
     model = Task
     form_class = TaskForm
     template_name = "tasks/task_form.html"
     login_url = "/accounts/login/"
+    rate_limit = "60/h"
+    rate_limit_scope = "task-edit"
+    rate_limit_methods = {"POST"}
 
     pk_url_kwarg = "task_id"
 
@@ -157,6 +167,7 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
 
 @login_required
 @require_POST
+@rate_limit(scope="task-assign-group", rate="30/h", methods={"POST"})
 def assign_group_to_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
     project = task.project
@@ -197,6 +208,7 @@ def assign_group_to_task(request, task_id):
 
 @login_required
 @require_POST
+@rate_limit(scope="task-assign-individual", rate="30/h", methods={"POST"})
 def assign_individual_to_task(request, task_id):
     MAX_ASSIGNEES = 5
 
