@@ -15,6 +15,12 @@ It started as a CRUD-style project, but now includes role-based authorization, a
 ### Group Details
 <img width="1832" height="949" alt="group_detail" src="https://github.com/user-attachments/assets/03e1a27b-d7c8-4c73-9dce-ed3a8ba44165" />
 
+## Live Demo
+
+You can try the live version of the application here:
+
+👉 https://project-management-app-django.onrender.com
+
 ## Features
 
 - User authentication with signup, login, and profile management
